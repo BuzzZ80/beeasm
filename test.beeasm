@@ -1,0 +1,4 @@
+MOV 0x00FF -> g0 ;owo?
+MOV 0x000F -> G5 ? eq ; i forgot to make conditions a keyword
+
+uwu: strz "hello"
