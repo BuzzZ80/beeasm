@@ -11,9 +11,9 @@ fn main() {
 
     match Lexer::new(&my_program).tokenize() {
         Ok(vec) => match Parser::new(vec).parse_one_statement() {
-            Some(Ok(t)) => println!("{:#?}", t),
-            Some(Err(e)) => println!("{}", e),
-            None => panic!("OnO"),
+            Ok(Some(t)) => println!("{:#?}", t),
+            Ok(None) => println!("Invalid code at start of file"),
+            Err(e) => println!("{}", e),
         },
         Err(e) => {
             println!("{}", e);

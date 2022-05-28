@@ -92,7 +92,7 @@ pub struct Lexer<'a> {
 }
 
 /// Returns a portion of a data from the start until pred returns false
-fn take_while<'a, F>(data: &str, pred: F) -> Result<(&str, usize), String>
+fn take_while<F>(data: &str, pred: F) -> Result<(&str, usize), String>
 where
     F: Fn(char) -> bool,
 {
@@ -122,7 +122,7 @@ fn skip_white_space(data: &str) -> usize {
 
 /// Returns the length of a span from a ; to a newline
 fn skip_comment(data: &str) -> usize {
-    if data.starts_with(";") {
+    if data.starts_with(';') {
         let bytes_read = match take_while(data, |c| c != '\n') {
             Ok((_, bytes_read)) => bytes_read,
             Err(_) => panic!("Unexpected EOF in skip_comment"),
@@ -140,17 +140,15 @@ fn tokenize_number(data: &str) -> Result<Token, String> {
         Err(e) => return Err(e),
     };
 
-    let result_num;
-
-    if read.len() > 2 {
-        result_num = match &read[0..2] {
+    let result_num = if read.len() > 2 {
+        match &read[0..2] {
             "0x" => i64::from_str_radix(&read[2..], 16),
             "0b" => i64::from_str_radix(&read[2..], 2),
             _ => read.parse::<i64>(),
-        };
+        }
     } else {
-        result_num = read.parse::<i64>();
-    }
+        read.parse::<i64>()
+    };
 
     let num = match result_num {
         Ok(n) => n,
@@ -244,10 +242,7 @@ pub fn tokenize_one_token(data: &str) -> Result<Token, String> {
         Some(c) => c,
         None => return Err("Unexpected EOF".to_owned()),
     };
-    let peek = match chars.next() {
-        Some(c) => c,
-        None => '\0',
-    };
+    let peek = chars.next().unwrap_or('\0');
 
     let token = match next {
         '-' if peek == '>' => Token(TokenKind::Arrow, 2, 0),
