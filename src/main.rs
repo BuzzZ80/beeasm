@@ -15,6 +15,9 @@ fn main() {
             Some(Err(e)) => println!("{}", e),
             None => panic!("OnO"),
         },
-        Err(e)  => {println!("{}", e); panic!("\n\n{}\n\n", e);},
+        Err(e) => {
+            println!("{}", e);
+            panic!("\n\n{}\n\n", e);
+        }
     };
 }

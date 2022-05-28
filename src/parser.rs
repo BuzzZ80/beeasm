@@ -1,15 +1,23 @@
-use std::fmt;
 use super::lexer::{Token, TokenKind};
+use std::fmt;
 
 #[derive(Debug)]
 pub struct Parser {
     tokens: Vec<Token>,
-    index:  usize,
+    index: usize,
 }
 
 #[derive(Debug)]
 enum CondKind {
-    Eq, Neq, Lt, Gte, Gt, Lte, Cr, Ncr, None,
+    Eq,
+    Neq,
+    Lt,
+    Gte,
+    Gt,
+    Lte,
+    Cr,
+    Ncr,
+    None,
 }
 
 #[derive(Debug)]
@@ -32,7 +40,7 @@ pub struct Expr {
 
 impl Parser {
     pub fn new(tokens: Vec<Token>) -> Self {
-        Self {tokens, index: 0}
+        Self { tokens, index: 0 }
     }
 
     fn peek(&self) -> Option<&Token> {
@@ -41,33 +49,33 @@ impl Parser {
 
     fn next(&mut self) -> Option<&Token> {
         match self.tokens.get(self.index) {
-            Some(t) => { self.index += 1; Some(t) },
-            None    => None,
+            Some(t) => {
+                self.index += 1;
+                Some(t)
+            }
+            None => None,
         }
     }
 
     /*
-    * instruction = op | op "?" CONDITION
-    * op          = OPCODE | OPCODE value | OPCODE value value 
-    * value       = REGISTER | expression
-    * expression  = literal | unary | binary | grouping
-    * literal     = INTEGER
-    * unary       = OPERATOR_UNARY expression
-    * binary      = expression OPERATOR_BINARY expression
-    * grouping    = "(" expression ")"
-    *
-    * directive   = DIRECTIVE (expression)* | DIRECTIVE (STRING)*
-    */
+     * instruction = op | op "?" CONDITION
+     * op          = OPCODE | OPCODE value | OPCODE value value
+     * value       = REGISTER | expression
+     * expression  = literal | unary | binary | grouping
+     * literal     = INTEGER
+     * unary       = OPERATOR_UNARY expression
+     * binary      = expression OPERATOR_BINARY expression
+     * grouping    = "(" expression ")"
+     *
+     * directive   = DIRECTIVE (expression)* | DIRECTIVE (STRING)*
+     */
 
     pub fn parse_one_statement(&mut self) -> Option<Result<Expr, String>> {
-        let expr = 
-        if let Some(instruction_res) = self.instruction() {
+        let expr = if let Some(instruction_res) = self.instruction() {
             instruction_res
-        }
-        else if let Some(directive_res) = self.directive() {
+        } else if let Some(directive_res) = self.directive() {
             directive_res
-        }
-        else {
+        } else {
             return None;
         };
 
@@ -76,20 +84,19 @@ impl Parser {
 
     fn instruction(&mut self) -> Option<Result<Expr, String>> {
         // Ensure that there's an operator to be read in
-        let mut op = 
-        match self.op() {
+        let mut op = match self.op() {
             Some(Ok(op)) => op,
             Some(Err(s)) => return Some(Err(s)),
-            None         => return None,
+            None => return None,
         };
 
         // Change to an instruciton to be returned with no condition by default
         op.change_kind(ExprKind::Instruction(CondKind::None));
-        
+
         // Peek for next token
         let peek = match self.peek() {
             Some(t) => t,
-            None    => return Some(Ok(op)),
+            None => return Some(Ok(op)),
         };
 
         // Check if there's a '?' for the conditional
@@ -98,21 +105,29 @@ impl Parser {
         }
 
         let current_line = peek.2;
-        
-        drop(peek); // Destroy reference
 
         self.next(); // Consume the '?'
 
         // Get the next word for the condition if it exists
         let peek = match self.peek() {
             Some(t) => t,
-            None    => return Some(Err(format!("No condition after '?' on line {}", current_line))),
+            None => {
+                return Some(Err(format!(
+                    "No condition after '?' on line {}",
+                    current_line
+                )))
+            }
         };
 
         // Check that the peeked token is in fact a condition, and if so, set that to op's cond
         match CondKind::from_token_kind(peek.0.to_owned()) {
             Some(k) => op.change_kind(ExprKind::Instruction(k)),
-            None    => return Some(Err(format!("No condition after the '?' on line {}", current_line))),
+            None => {
+                return Some(Err(format!(
+                    "No condition after the '?' on line {}",
+                    current_line
+                )))
+            }
         }
 
         Some(Ok(op))
@@ -123,13 +138,16 @@ impl Parser {
         self.next();
         self.next();
         self.next(); // test code lol
-        Some(Ok(Expr{kind: ExprKind::Op, exprs: vec![]}))
+        Some(Ok(Expr {
+            kind: ExprKind::Op,
+            exprs: vec![],
+        }))
     }
 
     //TODO:
 
     // fn value(&mut self) -> Option<Result<Expr, String>> {}
-    
+
     // fn expression(&mut self) -> Option<Result<Expr, String>> {}
 
     // fn literal(&mut self) -> Option<Result<Expr, String>> {}
@@ -141,7 +159,10 @@ impl Parser {
     // fn grouping(&mut self) -> Option<Result<Expr, String>> {}
 
     fn directive(&mut self) -> Option<Result<Expr, String>> {
-        Some(Ok(Expr{kind: ExprKind::Directive, exprs: vec![]}))
+        Some(Ok(Expr {
+            kind: ExprKind::Directive,
+            exprs: vec![],
+        }))
     }
 }
 
