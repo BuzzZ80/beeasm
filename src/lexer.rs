@@ -36,7 +36,8 @@ pub enum TokenKind {
     None,
 }
 
-pub struct Token(TokenKind, usize);
+/// TokenKind, span, line number
+pub struct Token(pub TokenKind, pub usize, pub usize);
 
 #[derive(Debug)]
 pub struct Lexer<'a> {
@@ -105,7 +106,7 @@ fn tokenize_number(data: &str) -> Result<Token, String> {
         Err(_) => return Err(format!("Could not parse number: '{}'", read)),
     };
     
-    Ok( Token(TokenKind::Integer(num), bytes_read) )
+    Ok( Token(TokenKind::Integer(num), bytes_read, 0) )
 }
 
 /// Returns a String from the 2nd char of data to the next ", will break if there's no "
@@ -115,7 +116,7 @@ fn tokenize_string_literal(data: &str) -> Result<Token, String> {
         Err(e) => return Err(e),
     };
 
-    Ok( Token(TokenKind::String(read.to_owned()), bytes_read + 2) )
+    Ok( Token(TokenKind::String(read.to_owned()), bytes_read + 2, 0) )
 }
 
 /// Returns a keyword or label from the start of data
@@ -182,7 +183,7 @@ fn tokenize_identifier(data: &str) -> Result<Token, String> {
         s     => TokenKind::Label(s.to_owned()),
     };
 
-    Ok( Token(token_kind, bytes_read) )
+    Ok( Token(token_kind, bytes_read, 0) )
 
 }
 
@@ -200,15 +201,15 @@ pub fn tokenize_one_token(data: &str) -> Result<Token, String> {
     
 
     let token = match next {
-        '-' if peek == '>' => Token(TokenKind::Arrow, 2),
-        '?' => Token(TokenKind::QuestionMark, 1),
-        ':' => Token(TokenKind::Colon, 1),
-        '+' => Token(TokenKind::Plus, 1),
-        '-' => Token(TokenKind::Minus, 1),
-        '*' => Token(TokenKind::Asterisk, 1),
-        '/' => Token(TokenKind::Slash, 1),
-        '(' => Token(TokenKind::OpenParen, 1),
-        ')' => Token(TokenKind::CloseParen, 1),
+        '-' if peek == '>' => Token(TokenKind::Arrow, 2, 0),
+        '?' => Token(TokenKind::QuestionMark, 1, 0),
+        ':' => Token(TokenKind::Colon, 1, 0),
+        '+' => Token(TokenKind::Plus, 1, 0),
+        '-' => Token(TokenKind::Minus, 1, 0),
+        '*' => Token(TokenKind::Asterisk, 1, 0),
+        '/' => Token(TokenKind::Slash, 1, 0),
+        '(' => Token(TokenKind::OpenParen, 1, 0),
+        ')' => Token(TokenKind::CloseParen, 1, 0),
         '0' ..= '9' => match tokenize_number(data) { 
             Ok(n) => n, 
             Err(e) => return Err(e)
@@ -265,7 +266,7 @@ impl<'a> Lexer<'a> {
             
             match val {
                 TokenKind::None => {},
-                _ => { tokens.push(Token(val, consumed)); }
+                _ => { tokens.push(Token(val, consumed, self.line)); }
             }
         }
 
