@@ -26,7 +26,7 @@ fn main() {
         match parser.parse_one_statement() {
             Ok(Some(t)) => println!("{}", t),
             Ok(None) => {
-                println!("EOF?");
+                println!("EOF");
                 break;
             }
             Err(e) => {

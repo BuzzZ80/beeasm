@@ -14,14 +14,14 @@ enum ExprKind {
     Instruction(TokenKind), // Conditions only
     Op(TokenKind),          // Operations only
     Value,
-    Expression,
+    // Expression,// Removed because i dont think theres any benefit to wrapping expressions in this
     Literal(i16),
     Label(String),
     Register(TokenKind), // Registers only
     Unary,
     Binary,
     Grouping,
-    Directive,
+    Directive(TokenKind),
 }
 
 #[derive(Debug)]
@@ -45,12 +45,12 @@ impl Parser {
 
     fn next(&mut self) -> Option<&Token> {
         match self.tokens.get(self.index) {
-            Some(t) => {
+            Some(t) if self.index != self.tokens.len() - 1 => {
                 self.index += 1;
                 self.line = t.2;
                 Some(t)
             }
-            None => None,
+            _ => None,
         }
     }
 
@@ -65,7 +65,7 @@ impl Parser {
      * binary      = expression OPERATOR_BINARY expression
      * grouping    = "(" expression ")"
      *
-     * directive   = DIRECTIVE (expression)* | DIRECTIVE (STRING)*
+     * directive   = DIRECTIVE (expression | STRING)*
      *
      * label       = LABEL ":"
      */
@@ -82,8 +82,7 @@ impl Parser {
                     _ => {
                         return Err(format!(
                             "Unexpected token '{}' on line '{}'",
-                            self.tokens[self.index - 1],
-                            self.line
+                            self.tokens[self.index], self.line
                         ))
                     }
                 },
@@ -155,8 +154,6 @@ impl Parser {
             None => return Ok(None),
         };
 
-        self.next();
-
         let mut op = match op_token_kind {
             TokenKind::Add
             | TokenKind::Sub
@@ -196,6 +193,8 @@ impl Parser {
             },
             _ => return Ok(None),
         };
+
+        self.next();
 
         let param_res = self.value();
         match param_res {
@@ -296,8 +295,34 @@ impl Parser {
     */
 
     fn directive(&mut self) -> Result<Option<Expr>, String> {
-        //Err("UNIMPLEMENTED/TODO".to_owned())
-        Ok(None)
+        let directive_token = match self.peek() {
+            Some(t) => t,
+            None => return Ok(None),
+        };
+
+        let kind = match &directive_token.0 {
+            TokenKind::Org | TokenKind::Db | TokenKind::Fill | TokenKind::Strz => {
+                &directive_token.0
+            }
+            _ => return Ok(None),
+        };
+
+        let mut directive = Expr {
+            kind: ExprKind::Directive(kind.to_owned()),
+            exprs: vec![],
+        };
+
+        self.next();
+
+        loop {
+            match self.expression() {
+                Ok(Some(expr)) => directive.exprs.push(expr),
+                Ok(None) => break,
+                Err(e) => return Err(e),
+            };
+        }
+
+        Ok(Some(directive))
     }
 
     fn label(&mut self) -> Result<Option<Expr>, String> {
