@@ -135,7 +135,7 @@ fn skip_comment(data: &str) -> usize {
 
 /// Returns the integer value of any decimal, binary, or hex string that data starts with
 fn tokenize_number(data: &str) -> Result<Token, String> {
-    let (read, bytes_read) = match take_while(data, |c| c != ' ') {
+    let (read, bytes_read) = match take_while(data, |c| !c.is_whitespace()) {
         Ok(s) => s,
         Err(e) => return Err(e),
     };

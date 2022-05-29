@@ -40,12 +40,16 @@ impl Parser {
     }
 
     fn peek(&self) -> Option<&Token> {
-        self.tokens.get(self.index)
+        if self.index != self.tokens.len() {
+            self.tokens.get(self.index)
+        } else {
+            None
+        }
     }
 
     fn next(&mut self) -> Option<&Token> {
         match self.tokens.get(self.index) {
-            Some(t) if self.index != self.tokens.len() - 1 => {
+            Some(t) if self.index != self.tokens.len() => {
                 self.index += 1;
                 self.line = t.2;
                 Some(t)
@@ -71,27 +75,28 @@ impl Parser {
      */
 
     pub fn parse_one_statement(&mut self) -> Result<Option<Expr>, String> {
-        let expr = match self.instruction() {
-            Ok(Some(i)) => i,
-            Ok(None) => match self.directive() {
-                Ok(Some(d)) => d,
-                Ok(None) => match self.label() {
-                    Ok(Some(d)) => d,
-                    Ok(None) if self.index == self.tokens.len() - 1 => return Ok(None),
-                    Err(e) => return Err(e),
-                    _ => {
-                        return Err(format!(
-                            "Unexpected token '{}' on line '{}'",
-                            self.tokens[self.index], self.line
-                        ))
-                    }
-                },
-                Err(e) => return Err(e),
-            },
+        match self.instruction() {
+            Ok(Some(i)) => return Ok(Some(i)),
+            Ok(None) => (),
             Err(e) => return Err(e),
         };
 
-        Ok(Some(expr))
+        match self.directive() {
+            Ok(Some(d)) => return Ok(Some(d)),
+            Ok(None) => (),
+            Err(e) => return Err(e),
+        };
+
+        match self.label() {
+            Ok(Some(d)) => return Ok(Some(d)),
+            Ok(None) => (),
+            Err(e) => return Err(e),
+        };
+
+        match self.peek() {
+            Some(t) => return Err(format!("Unexpected token '{}' on line '{}'", t, self.line)),
+            None => return Ok(None),
+        }
     }
 
     fn instruction(&mut self) -> Result<Option<Expr>, String> {
