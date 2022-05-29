@@ -343,7 +343,7 @@ impl<'a> Lexer<'a> {
 
 impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "(len {:0>3}) {:?}", self.1, self.0)
+        write!(f, "{:?}", self.0)
     }
 }
 

@@ -1,6 +1,6 @@
-MOV 0x00FF -> g0  eq ; uwu.
+MOV 0x00FF -> g0 ? eq; uwu.
 
 
-  LDR 0x000F -> g5 ? eq ; h
+LDR 0x000F -> g5  eq ; h
 
 uwu: strz "hello"

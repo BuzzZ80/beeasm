@@ -16,7 +16,7 @@ fn main() {
         }
         Err(e) => {
             println!("{}", e);
-            panic!("\n\n{}\n\n", e);
+            panic!();
         }
     };
 
@@ -31,7 +31,7 @@ fn main() {
             }
             Err(e) => {
                 println!("{}", e);
-                break;
+                panic!();
             }
         }
     }

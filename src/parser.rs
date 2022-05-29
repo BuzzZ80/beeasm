@@ -32,7 +32,11 @@ pub struct Expr {
 
 impl Parser {
     pub fn new(tokens: Vec<Token>) -> Self {
-        Self { tokens, index: 0 , line: 1}
+        Self {
+            tokens,
+            index: 0,
+            line: 1,
+        }
     }
 
     fn peek(&self) -> Option<&Token> {
@@ -67,7 +71,6 @@ impl Parser {
      */
 
     pub fn parse_one_statement(&mut self) -> Result<Option<Expr>, String> {
-        
         let expr = match self.instruction() {
             Ok(Some(i)) => i,
             Ok(None) => match self.directive() {
@@ -76,7 +79,13 @@ impl Parser {
                     Ok(Some(d)) => d,
                     Ok(None) if self.index == self.tokens.len() - 1 => return Ok(None),
                     Err(e) => return Err(e),
-                    _ => return Err(format!("Unexpected token '{:?}' on line '{}'", self.tokens[self.index - 1], self.line)),
+                    _ => {
+                        return Err(format!(
+                            "Unexpected token '{}' on line '{}'",
+                            self.tokens[self.index - 1],
+                            self.line
+                        ))
+                    }
                 },
                 Err(e) => return Err(e),
             },
@@ -134,6 +143,8 @@ impl Parser {
             | TokenKind::Ncr => instruction.kind = ExprKind::Instruction(peek.0.to_owned()),
             _ => return Err(format!("No condition after '?' on line {}", current_line)),
         };
+
+        self.next();
 
         Ok(Some(instruction))
     }
@@ -309,7 +320,7 @@ impl Parser {
 
         match &colon_token.0 {
             TokenKind::Colon => (),
-            _ => return Err(format!("No : after label on line {}", colon_token.2)),
+            _ => return Err(format!("No ':' after label on line {}", colon_token.2)),
         };
 
         self.next();
