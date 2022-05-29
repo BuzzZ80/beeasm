@@ -48,6 +48,7 @@ impl Parser {
     }
 
     /*
+     * statement   = instruction | directive | LABEL ":"
      * instruction = op | op "?" CONDITION
      * op          = OPCODE | OPCODE value | OPCODE value "->" value
      * value       = REGISTER | expression
@@ -58,17 +59,22 @@ impl Parser {
      * grouping    = "(" expression ")"
      *
      * directive   = DIRECTIVE (expression)* | DIRECTIVE (STRING)*
+     *
      */
 
     pub fn parse_one_statement(&mut self) -> Result<Option<Expr>, String> {
         let expr = match self.instruction() {
             Ok(Some(i)) => i,
-            Err(e) => return Err(e),
             Ok(None) => match self.directive() {
                 Ok(Some(d)) => d,
-                Ok(None) => return Ok(None),
+                Ok(None) => match self.label() {
+                    Ok(Some(d)) => d,
+                    Ok(None) => return Ok(None),
+                    Err(e) => return Err(e),
+                },
                 Err(e) => return Err(e),
             },
+            Err(e) => return Err(e),
         };
 
         Ok(Some(expr))
@@ -270,6 +276,10 @@ impl Parser {
     */
 
     fn directive(&mut self) -> Result<Option<Expr>, String> {
+        Err("UNIMPLEMENTED/TODO".to_owned())
+    }
+
+    fn label(&mut self) -> Result<Option<Expr>, String> {
         Err("UNIMPLEMENTED/TODO".to_owned())
     }
 }

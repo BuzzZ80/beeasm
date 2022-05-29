@@ -13,11 +13,11 @@ fn main() {
         Ok(vec) => {
             println!("{:#?}", vec);
             match Parser::new(vec).parse_one_statement() {
-            Ok(Some(t)) => println!("{}", t),
-            Ok(None) => println!("Invalid code at start of file"),
-            Err(e) => println!("{}", e),
+                Ok(Some(t)) => println!("{}", t),
+                Ok(None) => println!("Invalid code at start of file"),
+                Err(e) => println!("{}", e),
             }
-        },
+        }
         Err(e) => {
             println!("{}", e);
             panic!("\n\n{}\n\n", e);
