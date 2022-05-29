@@ -1,8 +1,4 @@
-  MOV           0x00FF 
--> g0    ; owo.
-?  
-NEQ              ; uwu.
-
+MOV 0x00FF -> g0 ? NEQ  ; uwu.
 
 MOV 0x000F -> G5 ? eq ; h
 

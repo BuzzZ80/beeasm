@@ -3,7 +3,7 @@ use std::fmt;
 #[derive(Debug, Clone)]
 pub enum TokenKind {
     // Literals
-    Integer(i64),
+    Integer(i16),
     String(String),
     Label(String),
 
@@ -142,12 +142,12 @@ fn tokenize_number(data: &str) -> Result<Token, String> {
 
     let result_num = if read.len() > 2 {
         match &read[0..2] {
-            "0x" => i64::from_str_radix(&read[2..], 16),
-            "0b" => i64::from_str_radix(&read[2..], 2),
-            _ => read.parse::<i64>(),
+            "0x" => i16::from_str_radix(&read[2..], 16),
+            "0b" => i16::from_str_radix(&read[2..], 2),
+            _ => read.parse::<i16>(),
         }
     } else {
-        read.parse::<i64>()
+        read.parse::<i16>()
     };
 
     let num = match result_num {
@@ -275,7 +275,7 @@ pub fn tokenize_one_token(data: &str) -> Result<Token, String> {
 
 impl Token {
     /// Converts Token to (TokenKind, usize)
-    fn as_tuple(&self) -> (TokenKind, usize) {
+    pub fn as_tuple(&self) -> (TokenKind, usize) {
         (self.0.to_owned(), self.1)
     }
 }

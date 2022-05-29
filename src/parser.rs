@@ -8,32 +8,21 @@ pub struct Parser {
 }
 
 #[derive(Debug)]
-enum CondKind {
-    Eq,
-    Neq,
-    Lt,
-    Gte,
-    Gt,
-    Lte,
-    Cr,
-    Ncr,
-    None,
-}
-
-#[derive(Debug)]
 #[allow(dead_code)]
 enum ExprKind {
-    Instruction(CondKind),
-    Op,
+    Instruction(TokenKind), // Conditions only
+    Op(TokenKind),          // Operations only
     Value,
     Expression,
     Literal(i16),
+    Register(TokenKind), // Registers only
     Unary,
     Binary,
     Grouping,
     Directive,
 }
 
+#[derive(Debug)]
 pub struct Expr {
     kind: ExprKind,
     exprs: Vec<Expr>,
@@ -60,7 +49,7 @@ impl Parser {
 
     /*
      * instruction = op | op "?" CONDITION
-     * op          = OPCODE | OPCODE value | OPCODE value value
+     * op          = OPCODE | OPCODE value | OPCODE value "->" value
      * value       = REGISTER | expression
      * expression  = literal | unary | binary | grouping
      * literal     = INTEGER
@@ -72,37 +61,43 @@ impl Parser {
      */
 
     pub fn parse_one_statement(&mut self) -> Result<Option<Expr>, String> {
-        let expr = if let Ok(Some(instruction_res)) = self.instruction() {
-            instruction_res
-        } else if let Ok(Some(directive_res)) = self.directive() {
-            directive_res
-        } else {
-            return Ok(None);
+        let expr = match self.instruction() {
+            Ok(Some(i)) => i,
+            Err(e) => return Err(e),
+            Ok(None) => match self.directive() {
+                Ok(Some(d)) => d,
+                Ok(None) => return Ok(None),
+                Err(e) => return Err(e),
+            },
         };
 
         Ok(Some(expr))
     }
 
     fn instruction(&mut self) -> Result<Option<Expr>, String> {
-        // Ensure that there's an operator to be read in
-        let mut op = match self.op() {
+        let mut instruction = Expr {
+            kind: ExprKind::Instruction(TokenKind::None),
+            exprs: vec![],
+        };
+        // Ensure that there's an operation to be read in
+        let op = match self.op() {
             Ok(Some(op)) => op,
             Ok(None) => return Ok(None),
             Err(e) => return Err(e),
         };
 
-        // Change to an instruciton to be returned with no condition by default
-        op.change_kind(ExprKind::Instruction(CondKind::None));
+        // place operation into instruction
+        instruction.exprs.push(op);
 
         // Peek for next token
         let peek = match self.peek() {
             Some(t) => t,
-            None => return Ok(Some(op)),
+            None => return Ok(Some(instruction)),
         };
 
         // Check if there's a '?' for the conditional
         if !matches!(peek.0, TokenKind::QuestionMark) {
-            return Ok(Some(op)); // If there's none, just return the op with no condition as an instruction
+            return Ok(Some(instruction)); // If there's none, just return the op with no condition as an instruction
         }
 
         let current_line = peek.2;
@@ -116,74 +111,181 @@ impl Parser {
         };
 
         // Check that the peeked token is in fact a condition, and if so, set that to op's cond
-        match CondKind::from_token_kind(peek.0.to_owned()) {
-            Some(k) => op.change_kind(ExprKind::Instruction(k)),
-            None => {
-                return Err(format!(
-                    "No condition after the '?' on line {}",
-                    current_line
-                ))
-            }
+        match peek.0 {
+            TokenKind::Eq
+            | TokenKind::Neq
+            | TokenKind::Lt
+            | TokenKind::Gte
+            | TokenKind::Gt
+            | TokenKind::Lte
+            | TokenKind::Cr
+            | TokenKind::Ncr => instruction.kind = ExprKind::Instruction(peek.0.to_owned()),
+            _ => (),
+        };
+
+        Ok(Some(instruction))
+    }
+
+    fn op(&mut self) -> Result<Option<Expr>, String> {
+        let op_token_kind = match self.peek() {
+            Some(t) => t.as_tuple().0,
+            None => return Ok(None),
+        };
+
+        self.next();
+
+        let mut op = match op_token_kind {
+            TokenKind::Add
+            | TokenKind::Sub
+            | TokenKind::Mul
+            | TokenKind::Div
+            | TokenKind::Mov
+            | TokenKind::Inc
+            | TokenKind::Dec
+            | TokenKind::Cmp
+            | TokenKind::Ldr
+            | TokenKind::Str
+            | TokenKind::Ldx
+            | TokenKind::Stx
+            | TokenKind::Asl
+            | TokenKind::Asr
+            | TokenKind::Ssp
+            | TokenKind::Gsp
+            | TokenKind::Or
+            | TokenKind::And
+            | TokenKind::Not
+            | TokenKind::Xor
+            | TokenKind::Flg
+            | TokenKind::Push
+            | TokenKind::Pshx
+            | TokenKind::Pop
+            | TokenKind::Adc
+            | TokenKind::Sbc
+            | TokenKind::Jmp
+            | TokenKind::Jsr
+            | TokenKind::Rts
+            | TokenKind::Int
+            | TokenKind::Cli
+            | TokenKind::Sti
+            | TokenKind::Exit => Expr {
+                kind: ExprKind::Op(op_token_kind),
+                exprs: vec![],
+            },
+            _ => return Ok(None),
+        };
+
+        let param_res = self.value();
+        match param_res {
+            Ok(Some(val)) => op.exprs.push(val),
+            Ok(None) => return Ok(Some(op)),
+            Err(e) => return Err(e),
+        }
+
+        // Check for an arrow
+        let line = match self.peek() {
+            Some(Token(TokenKind::Arrow, _, line)) => *line,
+            _ => return Ok(Some(op)),
+        };
+
+        self.next();
+
+        let param_res = self.value();
+        match param_res {
+            Ok(Some(val)) => op.exprs.push(val),
+            _ => return Err(format!("No 2nd parameter after -> on line {}", line)),
         }
 
         Ok(Some(op))
     }
 
-    fn op(&mut self) -> Result<Option<Expr>, String> {
-        //match self.peek() {
-
-        //}
-        todo!()
-    }
-
-    //TODO:
-
-    // fn value(&mut self) -> Result<Option<Expr>, String> {}
-
-    // fn expression(&mut self) -> Result<Option<Expr>, String> {}
-
-    // fn literal(&mut self) -> Result<Option<Expr>, String> {}
-
-    // fn unary(&mut self) -> Result<Option<Expr>, String> {}
-
-    // fn binary(&mut self) -> Result<Option<Expr>, String> {}
-
-    // fn grouping(&mut self) -> Result<Option<Expr>, String> {}
-
-    fn directive(&mut self) -> Result<Option<Expr>, String> {
-        Ok(Some(Expr {
-            kind: ExprKind::Directive,
+    fn value(&mut self) -> Result<Option<Expr>, String> {
+        let mut value = Expr {
+            kind: ExprKind::Value,
             exprs: vec![],
-        }))
-    }
-}
-
-impl CondKind {
-    fn from_token_kind(token_kind: TokenKind) -> Option<Self> {
-        let kind = match token_kind {
-            TokenKind::Eq => CondKind::Eq,
-            TokenKind::Neq => CondKind::Neq,
-            TokenKind::Lt => CondKind::Lt,
-            TokenKind::Gte => CondKind::Gte,
-            TokenKind::Gt => CondKind::Gt,
-            TokenKind::Lte => CondKind::Lte,
-            TokenKind::Cr => CondKind::Cr,
-            TokenKind::Ncr => CondKind::Ncr,
-            _ => return None,
         };
 
-        Some(kind)
+        let value_token_kind = match self.peek() {
+            Some(t) => t.as_tuple().0,
+            None => return Ok(None),
+        };
+
+        // Check if there's a register token
+        match value_token_kind {
+            TokenKind::G0
+            | TokenKind::G1
+            | TokenKind::G2
+            | TokenKind::G3
+            | TokenKind::G4
+            | TokenKind::G5
+            | TokenKind::Ix
+            | TokenKind::Pc => {
+                self.next();
+                value.exprs.push(Expr {
+                    kind: ExprKind::Register(value_token_kind),
+                    exprs: vec![],
+                });
+                return Ok(Some(value));
+            }
+            _ => (),
+        };
+
+        let expr = self.expression();
+        match expr {
+            Ok(Some(expr)) => value.exprs.push(expr),
+            Ok(None) => return Ok(None),
+            Err(e) => return Err(e),
+        };
+        Ok(Some(value))
+    }
+
+    fn expression(&mut self) -> Result<Option<Expr>, String> {
+        let expr_token_kind = match self.peek() {
+            Some(t) => t.as_tuple().0,
+            None => return Ok(None),
+        };
+
+        self.next();
+
+        match expr_token_kind {
+            TokenKind::Integer(v) => Ok(Some(Expr {
+                kind: ExprKind::Literal(v),
+                exprs: vec![],
+            })),
+            _ => Ok(None),
+        }
+    }
+
+    /*
+    fn unary(&mut self) -> Result<Option<Expr>, String> {
+        Err("UNIMPLEMENTED/TODO".to_owned())
+    }
+
+    fn binary(&mut self) -> Result<Option<Expr>, String> {
+        Err("UNIMPLEMENTED/TODO".to_owned())
+    }
+
+    fn grouping(&mut self) -> Result<Option<Expr>, String> {
+        Err("UNIMPLEMENTED/TODO".to_owned())
+    }
+    */
+
+    fn directive(&mut self) -> Result<Option<Expr>, String> {
+        Err("UNIMPLEMENTED/TODO".to_owned())
     }
 }
 
-impl Expr {
-    fn change_kind(&mut self, kind: ExprKind) {
-        self.kind = kind;
-    }
-}
-
-impl fmt::Debug for Expr {
+impl fmt::Display for Expr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "({:?}) {:?}", self.kind, self.exprs)
+        match write!(f, "{:?}", self.kind) {
+            Ok(()) => (),
+            Err(e) => return Err(e),
+        }
+        for expr in &self.exprs {
+            match write!(f, " {}", expr) {
+                Ok(()) => (),
+                Err(e) => return Err(e),
+            }
+        }
+        fmt::Result::Ok(())
     }
 }
