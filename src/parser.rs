@@ -5,6 +5,7 @@ use std::fmt;
 pub struct Parser {
     tokens: Vec<Token>,
     index: usize,
+    line: usize,
 }
 
 #[derive(Debug)]
@@ -15,6 +16,7 @@ enum ExprKind {
     Value,
     Expression,
     Literal(i16),
+    Label(String),
     Register(TokenKind), // Registers only
     Unary,
     Binary,
@@ -30,7 +32,7 @@ pub struct Expr {
 
 impl Parser {
     pub fn new(tokens: Vec<Token>) -> Self {
-        Self { tokens, index: 0 }
+        Self { tokens, index: 0 , line: 1}
     }
 
     fn peek(&self) -> Option<&Token> {
@@ -41,6 +43,7 @@ impl Parser {
         match self.tokens.get(self.index) {
             Some(t) => {
                 self.index += 1;
+                self.line = t.2;
                 Some(t)
             }
             None => None,
@@ -48,11 +51,11 @@ impl Parser {
     }
 
     /*
-     * statement   = instruction | directive | LABEL ":"
+     * statement   = instruction | directive | label
      * instruction = op | op "?" CONDITION
      * op          = OPCODE | OPCODE value | OPCODE value "->" value
      * value       = REGISTER | expression
-     * expression  = literal | unary | binary | grouping
+     * expression  = literal | LABEL | unary | binary | grouping
      * literal     = INTEGER
      * unary       = OPERATOR_UNARY expression
      * binary      = expression OPERATOR_BINARY expression
@@ -60,17 +63,20 @@ impl Parser {
      *
      * directive   = DIRECTIVE (expression)* | DIRECTIVE (STRING)*
      *
+     * label       = LABEL ":"
      */
 
     pub fn parse_one_statement(&mut self) -> Result<Option<Expr>, String> {
+        
         let expr = match self.instruction() {
             Ok(Some(i)) => i,
             Ok(None) => match self.directive() {
                 Ok(Some(d)) => d,
                 Ok(None) => match self.label() {
                     Ok(Some(d)) => d,
-                    Ok(None) => return Ok(None),
+                    Ok(None) if self.index == self.tokens.len() - 1 => return Ok(None),
                     Err(e) => return Err(e),
+                    _ => return Err(format!("Unexpected token '{:?}' on line '{}'", self.tokens[self.index - 1], self.line)),
                 },
                 Err(e) => return Err(e),
             },
@@ -126,7 +132,7 @@ impl Parser {
             | TokenKind::Lte
             | TokenKind::Cr
             | TokenKind::Ncr => instruction.kind = ExprKind::Instruction(peek.0.to_owned()),
-            _ => (),
+            _ => return Err(format!("No condition after '?' on line {}", current_line)),
         };
 
         Ok(Some(instruction))
@@ -250,15 +256,18 @@ impl Parser {
             None => return Ok(None),
         };
 
+        let kind = match expr_token_kind {
+            TokenKind::Integer(v) => ExprKind::Literal(v),
+            TokenKind::Label(n) => ExprKind::Label(n),
+            _ => return Ok(None),
+        };
+
         self.next();
 
-        match expr_token_kind {
-            TokenKind::Integer(v) => Ok(Some(Expr {
-                kind: ExprKind::Literal(v),
-                exprs: vec![],
-            })),
-            _ => Ok(None),
-        }
+        Ok(Some(Expr {
+            kind,
+            exprs: vec![],
+        }))
     }
 
     /*
@@ -276,11 +285,39 @@ impl Parser {
     */
 
     fn directive(&mut self) -> Result<Option<Expr>, String> {
-        Err("UNIMPLEMENTED/TODO".to_owned())
+        //Err("UNIMPLEMENTED/TODO".to_owned())
+        Ok(None)
     }
 
     fn label(&mut self) -> Result<Option<Expr>, String> {
-        Err("UNIMPLEMENTED/TODO".to_owned())
+        let label_token = match self.peek() {
+            Some(t) => t,
+            None => return Ok(None),
+        };
+
+        let kind = match &label_token.0 {
+            TokenKind::Label(n) => ExprKind::Label(n.to_owned()),
+            _ => return Ok(None),
+        };
+
+        self.next();
+
+        let colon_token = match self.peek() {
+            Some(t) => t.to_owned(),
+            None => return Ok(None),
+        };
+
+        match &colon_token.0 {
+            TokenKind::Colon => (),
+            _ => return Err(format!("No : after label on line {}", colon_token.2)),
+        };
+
+        self.next();
+
+        Ok(Some(Expr {
+            kind,
+            exprs: vec![],
+        }))
     }
 }
 

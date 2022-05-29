@@ -9,18 +9,30 @@ fn main() {
     let filename = "test.beeasm";
     let my_program = fs::read_to_string(filename).unwrap();
 
-    match Lexer::new(&my_program).tokenize() {
+    let tokens = match Lexer::new(&my_program).tokenize() {
         Ok(vec) => {
-            println!("{:#?}", vec);
-            match Parser::new(vec).parse_one_statement() {
-                Ok(Some(t)) => println!("{}", t),
-                Ok(None) => println!("Invalid code at start of file"),
-                Err(e) => println!("{}", e),
-            }
+            //println!("{:#?}", vec);
+            vec
         }
         Err(e) => {
             println!("{}", e);
             panic!("\n\n{}\n\n", e);
         }
     };
+
+    let mut parser = Parser::new(tokens);
+
+    loop {
+        match parser.parse_one_statement() {
+            Ok(Some(t)) => println!("{}", t),
+            Ok(None) => {
+                println!("EOF?");
+                break;
+            }
+            Err(e) => {
+                println!("{}", e);
+                break;
+            }
+        }
+    }
 }
