@@ -141,10 +141,14 @@ fn tokenize_number(data: &str) -> Result<Token, String> {
     };
 
     let result_num = if read.len() > 2 {
-        match &read[0..2] {
-            "0x" => i16::from_str_radix(&read[2..], 16),
-            "0b" => i16::from_str_radix(&read[2..], 2),
-            _ => read.parse::<i16>(),
+        match &read[0..1] {
+            "$" => i16::from_str_radix(&read[1..], 16),
+            "%" => i16::from_str_radix(&read[1..], 2),
+            _ => match &read[0..2] {
+                "0x" => i16::from_str_radix(&read[2..], 16),
+                "0b" => i16::from_str_radix(&read[2..], 2),
+                _ => read.parse::<i16>(),
+            }
         }
     } else {
         read.parse::<i16>()
@@ -254,7 +258,7 @@ pub fn tokenize_one_token(data: &str) -> Result<Token, String> {
         '/' => Token(TokenKind::Slash, 1, 0),
         '(' => Token(TokenKind::OpenParen, 1, 0),
         ')' => Token(TokenKind::CloseParen, 1, 0),
-        '0'..='9' => match tokenize_number(data) {
+        '0'..='9' | '$' | '%' => match tokenize_number(data) {
             Ok(n) => n,
             Err(e) => return Err(e),
         },

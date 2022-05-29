@@ -1,11 +1,23 @@
-; conditional testing
-MOV 0x00FF -> g0 ? neq
-MOV 0x00FF ? neq
-MOV ? neq
+; good notation
+  ; conditional testing
+  MOV 0x00FF -> g0 ? neq
+  MOV 0b1010 ? neq
+  MOV ? neq
 
-;unconditional testing
-MOV 0x00FF -> g0
-MOV 0x00FF
-MOV
+  ;unconditional testing
+  MOV 0x00FF -> g0
+  MOV 0b1010
+  MOV
+
+; bad notation
+  ; conditional testing
+  MOV $00FF -> g0 ? neq
+  MOV %1010 ? neq
+  MOV ? neq
+
+  ;unconditional testing
+  MOV $00FF -> g0
+  MOV %1010
+  MOV
 
 exit
