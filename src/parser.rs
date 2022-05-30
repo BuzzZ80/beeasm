@@ -9,7 +9,7 @@ pub struct Parser {
 }
 
 #[derive(Debug)]
-enum ExprKind {
+pub enum ExprKind {
     Instruction(TokenKind), // Conditions only
     Op(TokenKind),          // Operations only
     Expression,
@@ -27,6 +27,7 @@ enum ExprKind {
 pub struct Expr {
     kind: ExprKind,
     exprs: Vec<Expr>,
+    line: usize,
 }
 
 impl Parser {
@@ -101,6 +102,7 @@ impl Parser {
         let mut instruction = Expr {
             kind: ExprKind::Instruction(TokenKind::None),
             exprs: vec![],
+            line: 0,
         };
         // Ensure that there's an operation to be read in
         let op = match self.op() {
@@ -110,6 +112,7 @@ impl Parser {
         };
 
         // place operation into instruction
+        instruction.line = op.line;
         instruction.exprs.push(op);
 
         // Peek for next token
@@ -153,12 +156,12 @@ impl Parser {
     }
 
     fn op(&mut self) -> Result<Option<Expr>, String> {
-        let op_token_kind = match self.peek() {
-            Some(t) => t.as_tuple().0,
+        let op_token = match self.peek() {
+            Some(t) => t,
             None => return Ok(None),
         };
 
-        let mut op = match op_token_kind {
+        let mut op = match op_token.0 {
             TokenKind::Add
             | TokenKind::Sub
             | TokenKind::Mul
@@ -192,8 +195,9 @@ impl Parser {
             | TokenKind::Cli
             | TokenKind::Sti
             | TokenKind::Exit => Expr {
-                kind: ExprKind::Op(op_token_kind),
+                kind: ExprKind::Op(op_token.0.to_owned()),
                 exprs: vec![],
+                line: op_token.2,
             },
             _ => return Ok(None),
         };
@@ -225,8 +229,8 @@ impl Parser {
     }
 
     fn register_or_expression(&mut self) -> Result<Option<Expr>, String> {
-        let value_token_kind = match self.peek() {
-            Some(t) => t.as_tuple().0,
+        let (value_token_kind, line) = match self.peek() {
+            Some(t) => (t.0.to_owned(), t.2),
             None => return Ok(None),
         };
 
@@ -244,6 +248,7 @@ impl Parser {
                 return Ok(Some(Expr {
                     kind: ExprKind::Register(value_token_kind),
                     exprs: vec![],
+                    line,
                 }));
             }
             _ => (),
@@ -261,26 +266,32 @@ impl Parser {
         let mut expr = Expr {
             kind: ExprKind::Expression,
             exprs: vec![],
+            line: 0,
         };
 
-        let expr_token_kind = match self.peek() {
-            Some(t) => t.as_tuple().0,
+        let expr_token = match self.peek() {
+            Some(t) => {
+                expr.line = t.2;
+                t
+            }
             None => return Ok(None),
         };
 
-        let next_isnt_colon = match self.tokens.get(self.index + 1) {
-            Some(x) if matches!(x.0, TokenKind::Colon) => false,
-            _ => true,
+        match self.tokens.get(self.index + 1) {
+            Some(x) if matches!(x.0, TokenKind::Colon) => return Ok(None),
+            _ => (),
         };
 
-        match expr_token_kind {
+        match &expr_token.0 {
             TokenKind::Integer(v) => expr.exprs.push(Expr {
-                kind: ExprKind::Integer(v),
+                kind: ExprKind::Integer(*v),
                 exprs: vec![],
+                line: expr_token.2,
             }),
-            TokenKind::Label(n) if next_isnt_colon => expr.exprs.push(Expr {
-                kind: ExprKind::Label(n),
+            TokenKind::Label(n) => expr.exprs.push(Expr {
+                kind: ExprKind::Label(n.to_owned()),
                 exprs: vec![],
+                line: expr_token.2,
             }),
             _ => return Ok(None),
         };
@@ -320,6 +331,7 @@ impl Parser {
         let mut directive = Expr {
             kind: ExprKind::Directive(kind.to_owned()),
             exprs: vec![],
+            line: directive_token.2,
         };
 
         self.next();
@@ -334,10 +346,11 @@ impl Parser {
                 Err(e) => return Err(e),
             };
             match self.peek() {
-                Some(Token(TokenKind::String(s), _, _)) => {
+                Some(Token(TokenKind::String(s), _, line)) => {
                     directive.exprs.push(Expr {
                         kind: ExprKind::String(s.to_owned()),
                         exprs: vec![],
+                        line: *line,
                     });
                     self.next();
                 }
@@ -349,12 +362,12 @@ impl Parser {
     }
 
     fn label(&mut self) -> Result<Option<Expr>, String> {
-        let label_token = match self.peek() {
-            Some(t) => t,
+        let (label_token_kind, line) = match self.peek() {
+            Some(t) => (&t.0, t.2),
             None => return Ok(None),
         };
 
-        let kind = match &label_token.0 {
+        let kind = match label_token_kind {
             TokenKind::Label(n) => ExprKind::Label(n.to_owned()),
             _ => return Ok(None),
         };
@@ -376,6 +389,7 @@ impl Parser {
         Ok(Some(Expr {
             kind,
             exprs: vec![],
+            line,
         }))
     }
 }

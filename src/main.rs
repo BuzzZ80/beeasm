@@ -1,7 +1,10 @@
 use std::fs;
 
+mod codegen;
 mod lexer;
 mod parser;
+
+use codegen::*;
 use lexer::*;
 use parser::*;
 
