@@ -258,6 +258,11 @@ impl Parser {
     }
 
     fn expression(&mut self) -> Result<Option<Expr>, String> {
+        let mut expr = Expr {
+            kind: ExprKind::Expression,
+            exprs: vec![],
+        };
+
         let expr_token_kind = match self.peek() {
             Some(t) => t.as_tuple().0,
             None => return Ok(None),
@@ -268,18 +273,21 @@ impl Parser {
             _ => true,
         };
 
-        let kind = match expr_token_kind {
-            TokenKind::Integer(v) => ExprKind::Integer(v),
-            TokenKind::Label(n) if next_isnt_colon => ExprKind::Label(n),
+        match expr_token_kind {
+            TokenKind::Integer(v) => expr.exprs.push(Expr {
+                kind: ExprKind::Integer(v),
+                exprs: vec![],
+            }),
+            TokenKind::Label(n) if next_isnt_colon => expr.exprs.push(Expr {
+                kind: ExprKind::Label(n),
+                exprs: vec![],
+            }),
             _ => return Ok(None),
         };
 
         self.next();
 
-        Ok(Some(Expr {
-            kind,
-            exprs: vec![],
-        }))
+        Ok(Some(expr))
     }
 
     /*
