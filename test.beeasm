@@ -24,4 +24,5 @@ bad:
 
 exit
 
-db 0x0000 0x00ff %1010
+db 0x0000 0x00ff %1010 "uwu" "\0"
+strz "owowowowowoowwowowo"

@@ -9,18 +9,17 @@ pub struct Parser {
 }
 
 #[derive(Debug)]
-#[allow(dead_code)]
 enum ExprKind {
     Instruction(TokenKind), // Conditions only
     Op(TokenKind),          // Operations only
-    Value,
-    // Expression,// Removed because i dont think theres any benefit to wrapping expressions in this
-    Literal(i16),
+    Expression,
+    Integer(i16),
+    String(String),
     Label(String),
     Register(TokenKind), // Registers only
-    Unary,
-    Binary,
-    Grouping,
+    // Unary,
+    // Binary,
+    // Grouping,
     Directive(TokenKind),
 }
 
@@ -59,19 +58,18 @@ impl Parser {
     }
 
     /*
-     * statement   = instruction | directive | label
-     * instruction = op | op "?" CONDITION
-     * op          = OPCODE | OPCODE value | OPCODE value "->" value
-     * value       = REGISTER | expression
-     * expression  = literal | LABEL | unary | binary | grouping
-     * literal     = INTEGER
-     * unary       = OPERATOR_UNARY expression
-     * binary      = expression OPERATOR_BINARY expression
-     * grouping    = "(" expression ")"
+     *[X] statement   = instruction | directive | label
      *
-     * directive   = DIRECTIVE (expression | STRING)*
+     *[X] instruction = op | op "?" CONDITION
+     *[X] op          = OPCODE | OPCODE (REGISTER | expression) | OPCODE (REGISTER | expression) "->" (REGISTER | expression)
+     *[/] expression  = INTEGER | LABEL | unary | binary | grouping
+     *[ ] unary       = OPERATOR_UNARY expression
+     *[ ] binary      = expression OPERATOR_BINARY expression
+     *[ ] grouping    = "(" expression ")"
      *
-     * label       = LABEL ":"
+     *[X] directive   = DIRECTIVE (expression | STRING)*
+     *
+     *[X] label       = LABEL ":"
      */
 
     pub fn parse_one_statement(&mut self) -> Result<Option<Expr>, String> {
@@ -148,6 +146,7 @@ impl Parser {
             _ => return Err(format!("No condition after '?' on line {}", current_line)),
         };
 
+        // Consume conditional token
         self.next();
 
         Ok(Some(instruction))
@@ -201,7 +200,7 @@ impl Parser {
 
         self.next();
 
-        let param_res = self.value();
+        let param_res = self.register_or_expression();
         match param_res {
             Ok(Some(val)) => op.exprs.push(val),
             Ok(None) => return Ok(Some(op)),
@@ -216,7 +215,7 @@ impl Parser {
 
         self.next();
 
-        let param_res = self.value();
+        let param_res = self.register_or_expression();
         match param_res {
             Ok(Some(val)) => op.exprs.push(val),
             _ => return Err(format!("No 2nd parameter after -> on line {}", line)),
@@ -225,12 +224,7 @@ impl Parser {
         Ok(Some(op))
     }
 
-    fn value(&mut self) -> Result<Option<Expr>, String> {
-        let mut value = Expr {
-            kind: ExprKind::Value,
-            exprs: vec![],
-        };
-
+    fn register_or_expression(&mut self) -> Result<Option<Expr>, String> {
         let value_token_kind = match self.peek() {
             Some(t) => t.as_tuple().0,
             None => return Ok(None),
@@ -247,22 +241,20 @@ impl Parser {
             | TokenKind::Ix
             | TokenKind::Pc => {
                 self.next();
-                value.exprs.push(Expr {
+                return Ok(Some(Expr {
                     kind: ExprKind::Register(value_token_kind),
                     exprs: vec![],
-                });
-                return Ok(Some(value));
+                }));
             }
             _ => (),
         };
 
         let expr = self.expression();
         match expr {
-            Ok(Some(expr)) => value.exprs.push(expr),
+            Ok(Some(expr)) => return Ok(Some(expr)),
             Ok(None) => return Ok(None),
             Err(e) => return Err(e),
         };
-        Ok(Some(value))
     }
 
     fn expression(&mut self) -> Result<Option<Expr>, String> {
@@ -277,7 +269,7 @@ impl Parser {
         };
 
         let kind = match expr_token_kind {
-            TokenKind::Integer(v) => ExprKind::Literal(v),
+            TokenKind::Integer(v) => ExprKind::Integer(v),
             TokenKind::Label(n) if next_isnt_colon => ExprKind::Label(n),
             _ => return Ok(None),
         };
@@ -326,9 +318,22 @@ impl Parser {
 
         loop {
             match self.expression() {
-                Ok(Some(expr)) => directive.exprs.push(expr),
-                Ok(None) => break,
+                Ok(Some(expr)) => {
+                    directive.exprs.push(expr);
+                    continue;
+                }
+                Ok(None) => (),
                 Err(e) => return Err(e),
+            };
+            match self.peek() {
+                Some(Token(TokenKind::String(s), _, _)) => {
+                    directive.exprs.push(Expr {
+                        kind: ExprKind::String(s.to_owned()),
+                        exprs: vec![],
+                    });
+                    self.next();
+                }
+                _ => break,
             };
         }
 
