@@ -271,9 +271,14 @@ impl Parser {
             None => return Ok(None),
         };
 
+        let next_isnt_colon = match self.tokens.get(self.index + 1) {
+            Some(x) if matches!(x.0, TokenKind::Colon) => false,
+            _ => true,
+        };
+
         let kind = match expr_token_kind {
             TokenKind::Integer(v) => ExprKind::Literal(v),
-            TokenKind::Label(n) => ExprKind::Label(n),
+            TokenKind::Label(n) if next_isnt_colon => ExprKind::Label(n),
             _ => return Ok(None),
         };
 

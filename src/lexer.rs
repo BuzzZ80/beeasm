@@ -148,7 +148,7 @@ fn tokenize_number(data: &str) -> Result<Token, String> {
                 "0x" => i16::from_str_radix(&read[2..], 16),
                 "0b" => i16::from_str_radix(&read[2..], 2),
                 _ => read.parse::<i16>(),
-            }
+            },
         }
     } else {
         read.parse::<i16>()

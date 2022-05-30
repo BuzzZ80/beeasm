@@ -1,4 +1,5 @@
 ; good notation
+good:
   ; conditional testing
   MOV 0x00FF -> g0 ? neq
   MOV 0b1010 ? neq
@@ -10,6 +11,7 @@
   MOV
 
 ; bad notation
+bad:
   ; conditional testing
   MOV $00FF -> g0 ? neq
   MOV %1010 ? neq
@@ -21,3 +23,5 @@
   MOV
 
 exit
+
+db 0x0000 0x00ff %1010
