@@ -93,8 +93,8 @@ impl Parser {
         };
 
         match self.peek() {
-            Some(t) => return Err(format!("Unexpected token '{}' on line '{}'", t, self.line)),
-            None => return Ok(None),
+            Some(t) => Err(format!("Unexpected token '{}' on line '{}'", t, self.line)),
+            None => Ok(None),
         }
     }
 
@@ -256,10 +256,10 @@ impl Parser {
 
         let expr = self.expression();
         match expr {
-            Ok(Some(expr)) => return Ok(Some(expr)),
-            Ok(None) => return Ok(None),
-            Err(e) => return Err(e),
-        };
+            Ok(Some(expr)) => Ok(Some(expr)),
+            Ok(None) => Ok(None),
+            Err(e) => Err(e),
+        }
     }
 
     fn expression(&mut self) -> Result<Option<Expr>, String> {
