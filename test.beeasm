@@ -4,6 +4,7 @@ code:
   MOV 0b1010 ? neq
   MOV ? neq
 
+still_code:
   ;unconditional testing
   MOV 0x00FF -> g0
   MOV 0b1010

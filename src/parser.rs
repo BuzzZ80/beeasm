@@ -23,11 +23,10 @@ pub enum ExprKind {
     Directive(TokenKind),
 }
 
-#[derive(Debug)]
 pub struct Expr {
-    kind: ExprKind,
-    exprs: Vec<Expr>,
-    line: usize,
+    pub kind: ExprKind,
+    pub exprs: Vec<Expr>,
+    pub line: usize,
 }
 
 impl Parser {
@@ -73,6 +72,19 @@ impl Parser {
      *[X] label       = LABEL ":"
      */
 
+    pub fn parse(&mut self) -> Result<Vec<Expr>, String> {
+        let mut output: Vec<Expr> = Vec::new();
+
+        loop {
+            match self.parse_one_statement() {
+                Ok(Some(statement)) => output.push(statement),
+                Ok(None) => break,
+                Err(e) => return Err(format!("Error on line {}:\n  {}", self.line, e)),
+            };
+        }
+
+        Ok(output)
+    }
     pub fn parse_one_statement(&mut self) -> Result<Option<Expr>, String> {
         match self.instruction() {
             Ok(Some(i)) => return Ok(Some(i)),
@@ -93,17 +105,12 @@ impl Parser {
         };
 
         match self.peek() {
-            Some(t) => Err(format!("Unexpected token '{}' on line '{}'", t, self.line)),
+            Some(t) => Err(format!("Unexpected token '{}'", t)),
             None => Ok(None),
         }
     }
 
     fn instruction(&mut self) -> Result<Option<Expr>, String> {
-        let mut instruction = Expr {
-            kind: ExprKind::Instruction(TokenKind::None),
-            exprs: vec![],
-            line: 0,
-        };
         // Ensure that there's an operation to be read in
         let op = match self.op() {
             Ok(Some(op)) => op,
@@ -111,8 +118,12 @@ impl Parser {
             Err(e) => return Err(e),
         };
 
-        // place operation into instruction
-        instruction.line = op.line;
+        // place operation into new instruction struct
+        let mut instruction = Expr {
+            kind: ExprKind::Instruction(TokenKind::None),
+            exprs: vec![],
+            line: op.line,
+        };
         instruction.exprs.push(op);
 
         // Peek for next token
@@ -146,7 +157,7 @@ impl Parser {
             | TokenKind::Lte
             | TokenKind::Cr
             | TokenKind::Ncr => instruction.kind = ExprKind::Instruction(peek.0.to_owned()),
-            _ => return Err(format!("No condition after '?' on line {}", current_line)),
+            _ => return Err("No condition after '?'".to_owned()),
         };
 
         // Consume conditional token
@@ -174,8 +185,8 @@ impl Parser {
             | TokenKind::Str
             | TokenKind::Ldx
             | TokenKind::Stx
-            | TokenKind::Asl
-            | TokenKind::Asr
+            | TokenKind::Lsl
+            | TokenKind::Lsr
             | TokenKind::Ssp
             | TokenKind::Gsp
             | TokenKind::Or
@@ -188,6 +199,7 @@ impl Parser {
             | TokenKind::Pop
             | TokenKind::Adc
             | TokenKind::Sbc
+            | TokenKind::Pshx
             | TokenKind::Jmp
             | TokenKind::Jsr
             | TokenKind::Rts
@@ -212,8 +224,8 @@ impl Parser {
         }
 
         // Check for an arrow
-        let line = match self.peek() {
-            Some(Token(TokenKind::Arrow, _, line)) => *line,
+        match self.peek() {
+            Some(Token(TokenKind::Arrow, _, _)) => (),
             _ => return Ok(Some(op)),
         };
 
@@ -222,7 +234,7 @@ impl Parser {
         let param_res = self.register_or_expression();
         match param_res {
             Ok(Some(val)) => op.exprs.push(val),
-            _ => return Err(format!("No 2nd parameter after -> on line {}", line)),
+            _ => return Err("No 2nd parameter after '->'".to_owned()),
         }
 
         Ok(Some(op))
@@ -381,7 +393,7 @@ impl Parser {
 
         match &colon_token.0 {
             TokenKind::Colon => (),
-            _ => return Err(format!("No ':' after label on line {}", colon_token.2)),
+            _ => return Err("No ':' after label".to_owned()),
         };
 
         self.next();
@@ -395,6 +407,22 @@ impl Parser {
 }
 
 impl fmt::Display for Expr {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match write!(f, "{:?}", self.kind) {
+            Ok(()) => (),
+            Err(e) => return Err(e),
+        }
+        for expr in &self.exprs {
+            match write!(f, " {}", expr) {
+                Ok(()) => (),
+                Err(e) => return Err(e),
+            }
+        }
+        fmt::Result::Ok(())
+    }
+}
+
+impl fmt::Debug for Expr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match write!(f, "{:?}", self.kind) {
             Ok(()) => (),

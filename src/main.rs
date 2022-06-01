@@ -19,23 +19,28 @@ fn main() {
         }
         Err(e) => {
             println!("{}", e);
-            panic!();
+            return;
         }
     };
 
-    let mut parser = Parser::new(tokens);
+    let statements = match Parser::new(tokens).parse() {
+        Ok(vec) => {
+            println!("{:#?}", vec);
+            vec
+        }
+        Err(e) => {
+            println!("{}", e);
+            return;
+        }
+    };
 
-    loop {
-        match parser.parse_one_statement() {
-            Ok(Some(t)) => println!("{}", t),
-            Ok(None) => {
-                println!("EOF");
-                break;
-            }
-            Err(e) => {
-                println!("{}", e);
-                panic!();
-            }
+    let mut parser = CodeGen::new(statements);
+
+    match parser.assemble_single_expr() {
+        Ok(()) => println!("{:?}", parser.out),
+        Err(e) => {
+            println!("{}", e);
+            return;
         }
     }
 }
