@@ -195,10 +195,11 @@ impl Parser {
             | TokenKind::Xor
             | TokenKind::Flg
             | TokenKind::Push
+            | TokenKind::Pshx
             | TokenKind::Pop
             | TokenKind::Adc
             | TokenKind::Sbc
-            | TokenKind::Pshx
+            | TokenKind::Popx
             | TokenKind::Jmp
             | TokenKind::Jsr
             | TokenKind::Rts
