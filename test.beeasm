@@ -1,4 +1,4 @@
-;add 0x4050 -> g2
-;mov g2 -> g1
-;add g1 -> g0
+add 0x4050 -> g2
+mov g2 -> g1
+add g1 -> g0
 exit

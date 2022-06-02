@@ -36,14 +36,16 @@ fn main() {
 
     let mut parser = CodeGen::new(statements);
 
-    match parser.assemble_single_expr() {
-        Ok(()) => {
-            for i in parser.out {
-                println!("{:0>4x}", i)
+    loop {
+        match parser.assemble_single_expr() {
+            Ok(()) => (),
+            Err(e) => {
+                println!("{}", e);
+                break;
             }
         }
-        Err(e) => {
-            println!("{}", e);
-        }
     }
+    for i in parser.out {
+        println!("{:0>4x}", i)
+    };
 }

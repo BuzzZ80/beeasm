@@ -23,7 +23,7 @@ impl CodeGen {
     pub fn assemble_single_expr(&mut self) -> Result<(), String> {
         match self.instruction() {
             Ok(Some(())) => Ok(()),
-            Ok(None) => panic!("Not an instruction, others not implemented yet"),
+            Ok(None) => return Err("Not an instruction, others not implemented yet".to_owned()),
             Err(e) => Err(e),
         }
     }
@@ -195,12 +195,7 @@ impl CodeGen {
                 },
                 _ => panic!("Codegen error, param is not int or reg... oops"),
             },
-            _ => {
-                return Err(
-                    "Parsing error, more than 2 parameters were found in one operation... oops"
-                        .to_owned(),
-                )
-            }
+            _ => panic!("Parsing error, more than 2 parameters were found in one operation... oops"),
         };
 
         opcode <<= 10;
@@ -215,20 +210,15 @@ impl CodeGen {
                 let p1 = match &params[0] {
                     ('r', n) => *n,
                     ('i', _) => 0,
-                    _ => return Err("Codegen error, param is not int or reg... oops".to_owned()),
+                    _ => panic!("Codegen error, param is not int or reg... oops"),
                 };
                 p1 | match &params[1] {
                     ('r', n) => *n << 3,
                     ('i', _) => 0,
-                    _ => return Err("Codegen error, param is not int or reg... oops".to_owned()),
+                    _ => panic!("Codegen error, param is not int or reg... oops"),
                 }
             }
-            _ => {
-                return Err(
-                    "Parsing error, more than 2 parameters were found in one operation... oops"
-                        .to_owned(),
-                )
-            }
+            _ => panic!("Parsing error, more than 2 parameters were found in one operation... oops"),
         };
 
         let mut output: Vec<i16> = vec![opcode];
