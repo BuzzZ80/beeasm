@@ -252,6 +252,7 @@ pub fn tokenize_one_token(data: &str) -> Result<Token, String> {
 
     let token = match next {
         '-' if peek == '>' => Token(TokenKind::Arrow, 2, 0),
+        '>' => Token(TokenKind::Arrow, 1, 0),
         '?' => Token(TokenKind::QuestionMark, 1, 0),
         ':' => Token(TokenKind::Colon, 1, 0),
         '+' => Token(TokenKind::Plus, 1, 0),
