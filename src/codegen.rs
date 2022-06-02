@@ -64,8 +64,6 @@ impl CodeGen {
 
         self.out.append(&mut data);
 
-        self.index += 1;
-
         Ok(Some(()))
     }
 
@@ -131,41 +129,40 @@ impl CodeGen {
                 }
             }
             2 => match params[0].0 {
-                'r' => {
-                    match params[1].0 {
-                        'r' => match op_kind {
-                            TokenKind::Add => 0x01,
-                            TokenKind::Sub => 0x03,
-                            TokenKind::Mul => 0x05,
-                            TokenKind::Div => 0x07,
-                            TokenKind::Mov => 0x0B,
-                            TokenKind::Cmp => 0x0F,
-                            TokenKind::Lsl => 0x15,
-                            TokenKind::Lsr => 0x17,
-                            TokenKind::Or => 0x1C,
-                            TokenKind::And => 0x1E,
-                            TokenKind::Xor => 0x21,
-                            TokenKind::Adc => 0x28,
-                            TokenKind::Sbc => 0x2A,
-                            _ => {
-                                return Err("This operation does not take two register arguments"
-                                    .to_owned())
-                            }
-                        },
-                        'i' => {
-                            match op_kind {
-                                TokenKind::Cmp => 0x0E,
-                                TokenKind::Str => 0x11,
-                                TokenKind::Stx => 0x13,
-                                _ => return Err(
-                                    "This operation does not take a register and then an immediate"
-                                        .to_owned(),
-                                ),
-                            }
+                'r' => match params[1].0 {
+                    'r' => match op_kind {
+                        TokenKind::Add => 0x01,
+                        TokenKind::Sub => 0x03,
+                        TokenKind::Mul => 0x05,
+                        TokenKind::Div => 0x07,
+                        TokenKind::Mov => 0x0B,
+                        TokenKind::Cmp => 0x0F,
+                        TokenKind::Lsl => 0x15,
+                        TokenKind::Lsr => 0x17,
+                        TokenKind::Or => 0x1C,
+                        TokenKind::And => 0x1E,
+                        TokenKind::Xor => 0x21,
+                        TokenKind::Adc => 0x28,
+                        TokenKind::Sbc => 0x2A,
+                        _ => {
+                            return Err(
+                                "This operation does not take two register arguments".to_owned()
+                            )
                         }
-                        _ => panic!("Codegen error, value not a variable or immediate... oops")
-                    }
-                }
+                    },
+                    'i' => match op_kind {
+                        TokenKind::Cmp => 0x0E,
+                        TokenKind::Str => 0x11,
+                        TokenKind::Stx => 0x13,
+                        _ => {
+                            return Err(
+                                "This operation does not take a register and then an immediate"
+                                    .to_owned(),
+                            )
+                        }
+                    },
+                    _ => panic!("Codegen error, value not a variable or immediate... oops"),
+                },
                 'i' => match params[1].0 {
                     'r' => match op_kind {
                         TokenKind::Add => 0x00,
@@ -195,7 +192,9 @@ impl CodeGen {
                 },
                 _ => panic!("Codegen error, param is not int or reg... oops"),
             },
-            _ => panic!("Parsing error, more than 2 parameters were found in one operation... oops"),
+            _ => {
+                panic!("Parsing error, more than 2 parameters were found in one operation... oops")
+            }
         };
 
         opcode <<= 10;
@@ -218,7 +217,9 @@ impl CodeGen {
                     _ => panic!("Codegen error, param is not int or reg... oops"),
                 }
             }
-            _ => panic!("Parsing error, more than 2 parameters were found in one operation... oops"),
+            _ => {
+                panic!("Parsing error, more than 2 parameters were found in one operation... oops")
+            }
         };
 
         let mut output: Vec<i16> = vec![opcode];

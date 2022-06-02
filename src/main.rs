@@ -45,7 +45,10 @@ fn main() {
             }
         }
     }
+
+    println!("{:?}", parser.out);
+    
     for i in parser.out {
-        println!("{:0>4x}", i)
+        println!("{:0>4x}", i);
     };
 }
