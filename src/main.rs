@@ -25,7 +25,7 @@ fn main() {
 
     let statements = match Parser::new(tokens).parse() {
         Ok(vec) => {
-            println!("{:#?}", vec);
+            //println!("{:#?}", vec);
             vec
         }
         Err(e) => {
@@ -37,7 +37,11 @@ fn main() {
     let mut parser = CodeGen::new(statements);
 
     match parser.assemble_single_expr() {
-        Ok(()) => println!("{:?}", parser.out),
+        Ok(()) => {
+            for i in parser.out {
+                println!("{:16b}", i)
+            }
+        }
         Err(e) => {
             println!("{}", e);
             return;

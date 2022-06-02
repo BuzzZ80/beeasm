@@ -1,16 +1,1 @@
-code:
-  ; conditional testing
-  MOV 0x00FF -> g0 ? neq
-  MOV 0b1010 ? neq
-  MOV ? neq
-
-still_code:
-  ;unconditional testing
-  MOV 0x00FF -> g0
-  MOV 0b1010
-  MOV
-
-exit
-
-db 0x0000 0x00ff %1010 "uwu" "\0"
-strz "owowowowowoowwowowo"
+MOV PC -> G0

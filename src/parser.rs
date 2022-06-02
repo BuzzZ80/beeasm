@@ -8,7 +8,7 @@ pub struct Parser {
     line: usize,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ExprKind {
     Instruction(TokenKind), // Conditions only
     Op(TokenKind),          // Operations only
@@ -23,6 +23,7 @@ pub enum ExprKind {
     Directive(TokenKind),
 }
 
+#[derive(Clone)]
 pub struct Expr {
     pub kind: ExprKind,
     pub exprs: Vec<Expr>,
