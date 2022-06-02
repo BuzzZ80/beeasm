@@ -39,12 +39,11 @@ fn main() {
     match parser.assemble_single_expr() {
         Ok(()) => {
             for i in parser.out {
-                println!("{:16b}", i)
+                println!("{:0>4x}", i)
             }
         }
         Err(e) => {
             println!("{}", e);
-            return;
         }
     }
 }
