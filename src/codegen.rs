@@ -72,10 +72,16 @@ impl CodeGen {
     }
 
     fn assemble_single_expr(&mut self) -> Result<Option<()>, String> {
-        match self.instruction() {
-            Ok(Some(())) => Ok(Some(())),
-            Ok(None) => return Err("Encountered EOF or unsupported".to_owned()),
-            Err(e) => Err(e),
+        match self.exprs.get(self.index) {
+            Some(expr) => match &expr.kind {
+                ExprKind::Instruction(_) => match self.instruction() {
+                    Ok(Some(())) => Ok(Some(())),
+                    Ok(None) => return Err("Encountered EOF or unsupported".to_owned()),
+                    Err(e) => Err(e),
+                }
+                _ => todo!(),
+            }
+            None => return Ok(None),
         }
     }
 
@@ -299,7 +305,7 @@ impl CodeGen {
         opcode |= match params.len() {
             0 => 0,
             1 => match &params[0] {
-                ('r', n) => *n,
+                ('r', n) => *n << 3,
                 ('i', _) => 0,
                 _ => panic!("Codegen error, param is not int or reg... oops"),
             },
@@ -376,5 +382,22 @@ impl CodeGen {
             },
             _ => panic!("Parser error put too many parameters to one expression in expression()"),
         }
+    }
+
+    fn directive(&mut self, expr: &Expr) -> Result<Option<()>, String> {
+        let kind = match &expr.kind {
+            ExprKind::Directive(k) => k,
+            _ => panic!("directive() called on a non-directive expr... oops"), 
+        };
+
+        match kind {
+            TokenKind::Org => todo!(),
+            TokenKind::Db => todo!(),
+            TokenKind::Fill => todo!(),
+            TokenKind::Strz => todo!(),
+            _ => panic!("Parser error put non-directive in directive expr... oops"),
+        };
+
+        Ok(Some(()))
     }
 }

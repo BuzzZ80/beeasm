@@ -1,7 +1,0 @@
-MOV 0 -> g0
-
-loop:
-  inc g0
-  jmp loop ? zr
-
-exit
