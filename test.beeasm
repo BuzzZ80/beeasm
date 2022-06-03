@@ -4,5 +4,4 @@ loop:
   inc g0
   jmp loop ? zr
 
-loop:
-  exit
+exit

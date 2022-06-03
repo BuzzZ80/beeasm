@@ -19,7 +19,36 @@ impl CodeGen {
         }
     }
 
-    pub fn get_labels(&mut self) -> Result<(), String> {
+    pub fn assemble(&mut self) -> Result<(), String> {
+        match self.get_labels() {
+            Ok(()) => (),
+            Err(e) => {
+                let line = match self.exprs.get(self.index) {
+                    Some(n) => n.line as i32,
+                    None => -1,
+                };
+                return Err(format!("Error on line {}:\n  {}", line, e));
+            }
+        };
+
+        loop {
+            match self.assemble_single_expr() {
+                Ok(Some(())) => (),
+                Ok(None) => break,
+                Err(e) => {
+                    let line = match self.exprs.get(self.index) {
+                        Some(n) => n.line as i32,
+                        None => -1,
+                    };
+                    return Err(format!("Error on line {}:\n  {}", line, e));
+                }
+            };
+        }
+
+        Ok(())
+    }
+
+    fn get_labels(&mut self) -> Result<(), String> {
         let mut address = 0;
         let to_return = loop {
             let (label, pos) = match self.get_next_label() {
@@ -36,15 +65,15 @@ impl CodeGen {
                 None => ()
             };
 
-            self.labels.insert(label, pos);
+            self.labels.insert(label, pos * 2); // multiplying position by two because for some reason the computer addresses bytes despite never using bytes (??????)
         };
         self.index = 0;
         to_return
     }
 
-    pub fn assemble_single_expr(&mut self) -> Result<(), String> {
+    fn assemble_single_expr(&mut self) -> Result<Option<()>, String> {
         match self.instruction() {
-            Ok(Some(())) => Ok(()),
+            Ok(Some(())) => Ok(Some(())),
             Ok(None) => return Err("Encountered EOF or unsupported".to_owned()),
             Err(e) => Err(e),
         }

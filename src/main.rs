@@ -36,18 +36,12 @@ fn main() {
 
     let mut codegen = CodeGen::new(statements);
 
-    codegen.get_labels().expect("oops!");
-    //println!("{:#?}", codegen.labels);
-
-    loop {
-        match codegen.assemble_single_expr() {
-            Ok(()) => (),
-            Err(e) => {
-                println!("{}", e);
-                break;
-            }
-        }
-    }
+    match codegen.assemble() {
+        Ok(()) => (),
+        Err(e) => {
+            println!("{}", e);
+        },
+    };
     
     for i in codegen.out {
         println!("{:0>4x}", i);
