@@ -1,0 +1,4 @@
+mov 0x0 -> g0
+ORG 0x000
+label:
+  jmp label

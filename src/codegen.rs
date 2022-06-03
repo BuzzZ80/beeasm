@@ -7,6 +7,7 @@ pub struct CodeGen {
     labels: HashMap<String, usize>,
     exprs: Vec<Expr>,
     index: usize,
+    address: usize,
 }
 
 impl CodeGen {
@@ -16,6 +17,7 @@ impl CodeGen {
             labels: HashMap::new(),
             exprs,
             index: 0,
+            address: 0,
         }
     }
 
@@ -54,7 +56,7 @@ impl CodeGen {
             let (label, pos) = match self.get_next_label() {
                 Ok(Some( (label, pos) )) => {
                     address += pos;
-                    (label, address)
+                    (label, address + self.address)
                 }
                 Ok(None) => break Ok(()),
                 Err(e) => break Err(e),
@@ -68,21 +70,8 @@ impl CodeGen {
             self.labels.insert(label, pos * 2); // multiplying position by two because for some reason the computer addresses bytes despite never using bytes (??????)
         };
         self.index = 0;
+        self.address = 0;
         to_return
-    }
-
-    fn assemble_single_expr(&mut self) -> Result<Option<()>, String> {
-        match self.exprs.get(self.index) {
-            Some(expr) => match &expr.kind {
-                ExprKind::Instruction(_) => match self.instruction() {
-                    Ok(Some(())) => Ok(Some(())),
-                    Ok(None) => return Err("Encountered EOF or unsupported".to_owned()),
-                    Err(e) => Err(e),
-                }
-                _ => todo!(),
-            }
-            None => return Ok(None),
-        }
     }
 
     fn get_next_label(&mut self) -> Result<Option<(String, usize)>, String> {
@@ -99,8 +88,11 @@ impl CodeGen {
                     Ok(n) => addr += n,
                     Err(e) => return Err(e),
                 }
+                ExprKind::Directive(_) => match self.directive_len() {
+                    Ok(n) => addr += n,
+                    Err(e) => return Err(e),
+                }
                 ExprKind::Label(s) => break s.to_owned(),
-                ExprKind::Directive(_) => panic!("Directives not supported yet"),
                 _ => panic!("Non-instruction/label/directive found in get_next_label... oops"),
             }
 
@@ -130,6 +122,48 @@ impl CodeGen {
         data[0];
 
         Ok(data.len())
+    }
+
+    fn directive_len(&mut self) -> Result<usize, String> {
+        let expr = match self.exprs.get(self.index) {
+            Some(expr) if matches!(expr.kind, ExprKind::Directive(_)) => expr,
+            _ => panic!("directive_len called on non-instruction value... oops")
+        };
+
+        let kind = match &expr.kind {
+            ExprKind::Directive(k) => k,
+            _ => panic!("directive() called on a non-directive expr... oops"), 
+        };
+
+        match kind {
+            TokenKind::Org => {
+                if expr.exprs.len() > 1 || expr.exprs.is_empty() {
+                    return Err("Wrong number of parameters given to org".to_owned());
+                }
+                match self.expression(&expr.exprs[0]) {
+                    Ok(n) => {
+                        self.address = n as usize;
+                        return Ok(0);
+                    }
+                    Err(e) => return Err(e),
+                }
+            }
+            TokenKind::Db => todo!(),
+            TokenKind::Fill => todo!(),
+            TokenKind::Strz => todo!(),
+            _ => panic!("Parser error put non-directive in directive expr... oops"),
+        };
+    }
+
+    fn assemble_single_expr(&mut self) -> Result<Option<()>, String> {
+        match self.exprs.get(self.index) {
+            Some(expr) => match &expr.kind {
+                ExprKind::Instruction(_) => self.instruction(),
+                ExprKind::Directive(_) => self.directive(),
+                _ => todo!(),
+            }
+            None => return Ok(None),
+        }
     }
 
     fn instruction(&mut self) -> Result<Option<()>, String> {
@@ -384,14 +418,29 @@ impl CodeGen {
         }
     }
 
-    fn directive(&mut self, expr: &Expr) -> Result<Option<()>, String> {
+    fn directive(&mut self) -> Result<Option<()>, String> {
+        let expr = match self.exprs.get(self.index) {
+            Some(expr) if matches!(expr.kind, ExprKind::Directive(_)) => expr,
+            _ => panic!("directive() called on non-instruction value... oops")
+        };
+
+        self.index += 1;
+
         let kind = match &expr.kind {
             ExprKind::Directive(k) => k,
             _ => panic!("directive() called on a non-directive expr... oops"), 
         };
 
         match kind {
-            TokenKind::Org => todo!(),
+            TokenKind::Org => {
+                if expr.exprs.len() > 1 || expr.exprs.is_empty() {
+                    return Err("Too many parameters given to org".to_owned());
+                }
+                match self.expression(&expr.exprs[0]) {
+                    Ok(n) => self.address = n as usize,
+                    Err(e) => return Err(e),
+                }
+            }
             TokenKind::Db => todo!(),
             TokenKind::Fill => todo!(),
             TokenKind::Strz => todo!(),
