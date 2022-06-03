@@ -1,7 +1,5 @@
-add 0x4050 -> g2
-hello:
-mov g2 -> g1
+MOV 0 -> g0
 
-add g1 -> g0
-owo:
-exit
+loop:
+  inc g0
+  jmp loop ? zr

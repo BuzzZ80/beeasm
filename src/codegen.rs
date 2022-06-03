@@ -1,9 +1,10 @@
+use std::collections::HashMap;
 use super::lexer::TokenKind;
 use super::parser::{Expr, ExprKind};
 
 pub struct CodeGen {
     pub out: Vec<i16>,
-    pub labels: Vec<(String, usize)>,
+    pub labels: HashMap<String, usize>,
     pub exprs: Vec<Expr>,
     index: usize,
 }
@@ -12,7 +13,7 @@ impl CodeGen {
     pub fn new(exprs: Vec<Expr>) -> Self {
         Self {
             out: vec![],
-            labels: vec![],
+            labels: HashMap::new(),
             exprs,
             index: 0,
         }
@@ -30,7 +31,7 @@ impl CodeGen {
                 Err(e) => break Err(e),
             };
 
-            self.labels.push((label, pos));
+            self.labels.insert(label, pos);
         };
         self.index = 0;
         to_return
@@ -39,7 +40,7 @@ impl CodeGen {
     pub fn assemble_single_expr(&mut self) -> Result<(), String> {
         match self.instruction() {
             Ok(Some(())) => Ok(()),
-            Ok(None) => return Err("Not an instruction, others not implemented yet".to_owned()),
+            Ok(None) => return Err("Encountered EOF or unsupported".to_owned()),
             Err(e) => Err(e),
         }
     }
@@ -308,12 +309,15 @@ impl CodeGen {
                 TokenKind::Pc => ('r', 7),
                 _ => panic!("Parser error did not put a valid register in Register struct... oops\n  put: {:?}", r),
             }),
-            ExprKind::Expression => Ok(('i', self.expression(&expr))),
+            ExprKind::Expression => match self.expression(&expr) {
+                Ok(n) => Ok(('i', n)),
+                Err(e) => return Err(e),
+            }
             _ => panic!("Parser error did not put in a register, immediate, or label... oops"),
         }
     }
 
-    fn expression(&self, expr: &Expr) -> i16 {
+    fn expression(&self, expr: &Expr) -> Result<i16, String> {
         let Expr {
             kind: expr_kind,
             exprs,
@@ -327,8 +331,11 @@ impl CodeGen {
 
         match exprs.len() {
             1 => match &exprs[0].kind {
-                ExprKind::Integer(n) => return *n,
-                ExprKind::Label(_s) => panic!("NOT YET IMPLEMENTED: LABELS"),
+                ExprKind::Integer(n) => return Ok(*n),
+                ExprKind::Label(s) => match self.labels.get(s) {
+                    Some(n) => return Ok(*n as i16),
+                    None => return Err(format!("Label \"{}\" not found", s)),
+                },
                 _ => {
                     panic!("Parser error did not put an immediate or label in expression()... oops")
                 }

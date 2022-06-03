@@ -25,7 +25,7 @@ fn main() {
 
     let statements = match Parser::new(tokens).parse() {
         Ok(vec) => {
-            println!("{:#?}", vec);
+            //println!("{:#?}", vec);
             vec
         }
         Err(e) => {
@@ -37,7 +37,7 @@ fn main() {
     let mut codegen = CodeGen::new(statements);
 
     codegen.get_labels().expect("oops!");
-    println!("{:#?}", codegen.labels);
+    //println!("{:#?}", codegen.labels);
 
     loop {
         match codegen.assemble_single_expr() {
