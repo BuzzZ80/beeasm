@@ -1,4 +1,7 @@
 add 0x4050 -> g2
+hello:
 mov g2 -> g1
+
 add g1 -> g0
+owo:
 exit

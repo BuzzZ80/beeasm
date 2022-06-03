@@ -3,10 +3,9 @@ use super::parser::{Expr, ExprKind};
 
 pub struct CodeGen {
     pub out: Vec<i16>,
-    labels: Vec<(String, usize)>,
-    exprs: Vec<Expr>,
+    pub labels: Vec<(String, usize)>,
+    pub exprs: Vec<Expr>,
     index: usize,
-    address: usize,
 }
 
 impl CodeGen {
@@ -16,8 +15,25 @@ impl CodeGen {
             labels: vec![],
             exprs,
             index: 0,
-            address: 0,
         }
+    }
+
+    pub fn get_labels(&mut self) -> Result<(), String> {
+        let mut address = 0;
+        let to_return = loop {
+            let (label, pos) = match self.get_next_label() {
+                Ok(Some( (label, pos) )) => {
+                    address += pos;
+                    (label, address)
+                }
+                Ok(None) => break Ok(()),
+                Err(e) => break Err(e),
+            };
+
+            self.labels.push((label, pos));
+        };
+        self.index = 0;
+        to_return
     }
 
     pub fn assemble_single_expr(&mut self) -> Result<(), String> {
@@ -26,6 +42,53 @@ impl CodeGen {
             Ok(None) => return Err("Not an instruction, others not implemented yet".to_owned()),
             Err(e) => Err(e),
         }
+    }
+
+    fn get_next_label(&mut self) -> Result<Option<(String, usize)>, String> {
+        let mut addr = 0;
+        let label = loop {
+            let kind = match self.exprs.get(self.index) {
+                Some(expr) => &expr.kind, 
+                None => return Ok(None),
+            };
+
+
+            match kind {
+                ExprKind::Instruction(_) => match self.instruction_len() {
+                    Ok(n) => addr += n,
+                    Err(e) => return Err(e),
+                }
+                ExprKind::Label(s) => break s.to_owned(),
+                ExprKind::Directive(_) => panic!("Directives not supported yet"),
+                _ => panic!("Non-instruction/label/directive found in get_next_label... oops"),
+            }
+
+            self.index += 1;
+        };
+
+        self.exprs.remove(self.index);
+        return Ok(Some( (label, addr) ))
+    }
+
+    fn instruction_len(&self) -> Result<usize, String> {
+        let exprs = match self.exprs.get(self.index) {
+            Some(Expr {
+                kind: ExprKind::Instruction(_),
+                exprs,
+                line: _,
+            }) => exprs,
+            _ => panic!("instruction_len called on non-instruction value... oops"),
+        };
+
+        let data = match self.op(exprs) {
+            Ok(n) if !n.is_empty() => n,
+            Ok(n) => panic!("Codegen error, only {} returned by op()... oops", n.len()),
+            Err(e) => return Err(e),
+        };
+
+        data[0];
+
+        Ok(data.len())
     }
 
     fn instruction(&mut self) -> Result<Option<()>, String> {
