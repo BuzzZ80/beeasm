@@ -4,8 +4,8 @@ use super::parser::{Expr, ExprKind};
 
 pub struct CodeGen {
     pub out: Vec<i16>,
-    pub labels: HashMap<String, usize>,
-    pub exprs: Vec<Expr>,
+    labels: HashMap<String, usize>,
+    exprs: Vec<Expr>,
     index: usize,
 }
 
@@ -29,6 +29,11 @@ impl CodeGen {
                 }
                 Ok(None) => break Ok(()),
                 Err(e) => break Err(e),
+            };
+
+            match self.labels.get(&label) {
+                Some(_) => return Err(format!("Duplicate label \"{}\" found", label)),
+                None => ()
             };
 
             self.labels.insert(label, pos);
