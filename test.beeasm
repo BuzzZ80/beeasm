@@ -1,4 +1,9 @@
-mov 0x0 -> g0
-ORG 0x000
-label:
-  jmp label
+org 0x10
+mov 0x40 -> g0
+loop1:
+ldr 0x0 -> g0
+jmp loop1
+
+org 0x20
+loop2:
+jmp loop2

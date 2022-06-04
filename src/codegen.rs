@@ -1,25 +1,31 @@
+use std::fmt;
 use std::collections::HashMap;
 use super::lexer::TokenKind;
 use super::parser::{Expr, ExprKind};
 
 pub struct CodeGen {
-    pub out: Vec<i16>,
+    pub out: Vec<WordPacket>,
+    working_packet: usize,
     labels: HashMap<String, usize>,
     exprs: Vec<Expr>,
     index: usize,
-    address: usize,
 }
+
+/// Stores starting address and data for every org directive.
+/// Created so that overlaps can be easily detected.
+pub struct WordPacket (usize,Vec<i16>);
 
 impl CodeGen {
     pub fn new(exprs: Vec<Expr>) -> Self {
         Self {
-            out: vec![],
+            out: vec![WordPacket (0, vec![])],
+            working_packet: 0,
             labels: HashMap::new(),
             exprs,
             index: 0,
-            address: 0,
         }
     }
+
 
     pub fn assemble(&mut self) -> Result<(), String> {
         match self.get_labels() {
@@ -51,12 +57,12 @@ impl CodeGen {
     }
 
     fn get_labels(&mut self) -> Result<(), String> {
-        let mut address = 0;
         let to_return = loop {
-            let (label, pos) = match self.get_next_label() {
+            let mut relative_address = 0;
+            let label = match self.get_next_label() {
                 Ok(Some( (label, pos) )) => {
-                    address += pos;
-                    (label, address + self.address)
+                    relative_address += pos;
+                    label
                 }
                 Ok(None) => break Ok(()),
                 Err(e) => break Err(e),
@@ -67,15 +73,16 @@ impl CodeGen {
                 None => ()
             };
 
-            self.labels.insert(label, pos * 2); // multiplying position by two because for some reason the computer addresses bytes despite never using bytes (??????)
+            self.labels.insert(label, relative_address);
         };
+
         self.index = 0;
-        self.address = 0;
+
         to_return
     }
 
     fn get_next_label(&mut self) -> Result<Option<(String, usize)>, String> {
-        let mut addr = 0;
+        let mut words = 0;
         let label = loop {
             let kind = match self.exprs.get(self.index) {
                 Some(expr) => &expr.kind, 
@@ -85,11 +92,11 @@ impl CodeGen {
 
             match kind {
                 ExprKind::Instruction(_) => match self.instruction_len() {
-                    Ok(n) => addr += n,
+                    Ok(n) => words += n,
                     Err(e) => return Err(e),
                 }
-                ExprKind::Directive(_) => match self.directive_len() {
-                    Ok(n) => addr += n,
+                ExprKind::Directive(_) => match self.directive_len(&mut words) {
+                    Ok(n) => words += n,
                     Err(e) => return Err(e),
                 }
                 ExprKind::Label(s) => break s.to_owned(),
@@ -100,7 +107,13 @@ impl CodeGen {
         };
 
         self.exprs.remove(self.index);
-        return Ok(Some( (label, addr) ))
+
+        for i in &self.out {
+            print!("{}", i);
+        };
+
+        println!();
+        Ok(Some( (label, words + self.out[self.working_packet].0) ))
     }
 
     fn instruction_len(&self) -> Result<usize, String> {
@@ -124,7 +137,7 @@ impl CodeGen {
         Ok(data.len())
     }
 
-    fn directive_len(&mut self) -> Result<usize, String> {
+    fn directive_len(&mut self, single_label_adr: &mut usize) -> Result<usize, String> {
         let expr = match self.exprs.get(self.index) {
             Some(expr) if matches!(expr.kind, ExprKind::Directive(_)) => expr,
             _ => panic!("directive_len called on non-instruction value... oops")
@@ -142,7 +155,11 @@ impl CodeGen {
                 }
                 match self.expression(&expr.exprs[0]) {
                     Ok(n) => {
-                        self.address = n as usize;
+                        self.out.push(WordPacket (n as usize, vec![]));
+                        self.working_packet = self.out.len() - 1;
+
+                        *single_label_adr = 0;
+
                         return Ok(0);
                     }
                     Err(e) => return Err(e),
@@ -200,7 +217,8 @@ impl CodeGen {
 
         data[0] |= cond_binary << 6;
 
-        self.out.append(&mut data);
+        // Append to working packet
+        self.out[self.working_packet].1.append(&mut data);
 
         Ok(Some(()))
     }
@@ -319,9 +337,9 @@ impl CodeGen {
                         TokenKind::Adc => 0x27,
                         TokenKind::Sbc => 0x29,
                         _ => {
-                            return Err(
-                                "This operation does not take an immediate and then a register"
-                                    .to_owned(),
+                            return Err(format!(
+                                "{:?} does not take an immediate and then a register",
+                                op_kind)
                             )
                         }
                     },
@@ -434,10 +452,14 @@ impl CodeGen {
         match kind {
             TokenKind::Org => {
                 if expr.exprs.len() > 1 || expr.exprs.is_empty() {
-                    return Err("Too many parameters given to org".to_owned());
+                    return Err("Wrong number of parameters given to org".to_owned());
                 }
                 match self.expression(&expr.exprs[0]) {
-                    Ok(n) => self.address = n as usize,
+                    Ok(n) => {
+                        self.out.push(WordPacket (n as usize, vec![]));
+                        self.working_packet = self.out.len() - 1;
+                        return Ok(Some(()))
+                    }
                     Err(e) => return Err(e),
                 }
             }
@@ -448,5 +470,21 @@ impl CodeGen {
         };
 
         Ok(Some(()))
+    }
+}
+
+impl fmt::Display for WordPacket {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match write!(f, "Address: 0x{:0>4X}\n", self.0) {
+            Ok(()) => (),
+            Err(e) => return Err(e),
+        }
+        for val in &self.1 {
+            match write!(f, "  0x{:0>4X}\n", val) {
+                Ok(()) => (),
+                Err(e) => return Err(e),
+            }
+        }
+        fmt::Result::Ok(())
     }
 }

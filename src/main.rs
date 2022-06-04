@@ -25,7 +25,7 @@ fn main() {
 
     let statements = match Parser::new(tokens).parse() {
         Ok(vec) => {
-            //println!("{:#?}", vec);
+            println!("{:#?}", vec);
             vec
         }
         Err(e) => {
@@ -44,6 +44,6 @@ fn main() {
     };
     
     for i in codegen.out {
-        println!("{:0>4x}", i);
+        print!("{}", i);
     };
 }
