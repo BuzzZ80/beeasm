@@ -71,7 +71,7 @@ impl CodeGen {
             };
 
             if last_packet != self.working_packet {
-                //cum_pos = 0;
+                cum_pos = self.out[self.working_packet].0;
             }
 
             cum_pos += pos;
