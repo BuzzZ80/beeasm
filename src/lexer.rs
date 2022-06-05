@@ -136,10 +136,7 @@ fn skip_comment(data: &str) -> usize {
 
 /// Returns the integer value of any decimal, binary, or hex string that data starts with
 fn tokenize_number(data: &str) -> Result<Token, String> {
-    let (read, bytes_read) = match take_while(data, |c| !c.is_whitespace()) {
-        Ok(s) => s,
-        Err(e) => return Err(e),
-    };
+    let (read, bytes_read) = take_while(data, |c| !c.is_whitespace())?;
 
     let result_num = if read.len() > 2 {
         match &read[0..1] {
@@ -165,20 +162,14 @@ fn tokenize_number(data: &str) -> Result<Token, String> {
 
 /// Returns a String from the 2nd char of data to the next ", will break if there's no "
 fn tokenize_string_literal(data: &str) -> Result<Token, String> {
-    let (read, bytes_read) = match take_while(&data[1..], |c| c != '"') {
-        Ok(s) => s,
-        Err(e) => return Err(e),
-    };
+    let (read, bytes_read) = take_while(&data[1..], |c| c != '"')?;
 
     Ok(Token(TokenKind::String(read.to_owned()), bytes_read + 2, 0))
 }
 
 /// Returns a keyword or label from the start of data
 fn tokenize_identifier(data: &str) -> Result<Token, String> {
-    let (read, bytes_read) = match take_while(data, |c| c == '_' || c.is_alphanumeric()) {
-        Ok(s) => s,
-        Err(e) => return Err(e),
-    };
+    let (read, bytes_read) = take_while(data, |c| c == '_' || c.is_alphanumeric())?;
 
     let token_kind = match &read.to_lowercase()[..] {
         "g0" => TokenKind::G0,
@@ -239,10 +230,7 @@ fn tokenize_identifier(data: &str) -> Result<Token, String> {
 
 /// Tokenizes a single directive
 fn tokenize_directive(data: &str) -> Result<Token, String> {
-    let (read, bytes_read) = match take_while(data, |c| c == '_' || c == '.' || c.is_alphanumeric()) {
-        Ok(s) => s,
-        Err(e) => return Err(e),
-    };
+    let (read, bytes_read) = take_while(data, |c| c == '_' || c == '.' || c.is_alphanumeric())?;
 
     let token_kind = match &read.to_lowercase()[..] {
         ".org" => TokenKind::Org,

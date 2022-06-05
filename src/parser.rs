@@ -87,22 +87,19 @@ impl Parser {
         Ok(output)
     }
     pub fn parse_one_statement(&mut self) -> Result<Option<Expr>, String> {
-        match self.instruction() {
-            Ok(Some(i)) => return Ok(Some(i)),
-            Ok(None) => (),
-            Err(e) => return Err(e),
+        match self.instruction()? {
+            Some(i) => return Ok(Some(i)),
+            None => (),
         };
 
-        match self.directive() {
-            Ok(Some(d)) => return Ok(Some(d)),
-            Ok(None) => (),
-            Err(e) => return Err(e),
+        match self.directive()? {
+            Some(d) => return Ok(Some(d)),
+            None => (),
         };
 
-        match self.label() {
-            Ok(Some(d)) => return Ok(Some(d)),
-            Ok(None) => (),
-            Err(e) => return Err(e),
+        match self.label()? {
+            Some(d) => return Ok(Some(d)),
+            None => (),
         };
 
         match self.peek() {
@@ -113,10 +110,9 @@ impl Parser {
 
     fn instruction(&mut self) -> Result<Option<Expr>, String> {
         // Ensure that there's an operation to be read in
-        let op = match self.op() {
-            Ok(Some(op)) => op,
-            Ok(None) => return Ok(None),
-            Err(e) => return Err(e),
+        let op = match self.op()? {
+            Some(op) => op,
+            None => return Ok(None),
         };
 
         // place operation into new instruction struct
@@ -217,11 +213,9 @@ impl Parser {
 
         self.next();
 
-        let param_res = self.register_or_expression();
-        match param_res {
-            Ok(Some(val)) => op.exprs.push(val),
-            Ok(None) => return Ok(Some(op)),
-            Err(e) => return Err(e),
+        match self.register_or_expression()? {
+            Some(val) => op.exprs.push(val),
+            None => return Ok(Some(op)),
         }
 
         // Check for an arrow
@@ -232,8 +226,7 @@ impl Parser {
 
         self.next();
 
-        let param_res = self.register_or_expression();
-        match param_res {
+        match self.register_or_expression() {
             Ok(Some(val)) => op.exprs.push(val),
             _ => return Err("No 2nd parameter after '->'".to_owned()),
         }
@@ -350,13 +343,12 @@ impl Parser {
         self.next();
 
         loop {
-            match self.expression() {
-                Ok(Some(expr)) => {
+            match self.expression()? {
+                Some(expr) => {
                     directive.exprs.push(expr);
                     continue;
                 }
-                Ok(None) => (),
-                Err(e) => return Err(e),
+                None => (),
             };
             match self.peek() {
                 Some(Token(TokenKind::String(s), _, line)) => {
@@ -409,15 +401,9 @@ impl Parser {
 
 impl fmt::Display for Expr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match write!(f, "{:?}", self.kind) {
-            Ok(()) => (),
-            Err(e) => return Err(e),
-        }
+        write!(f, "{:?}", self.kind)?;
         for expr in &self.exprs {
-            match write!(f, " {}", expr) {
-                Ok(()) => (),
-                Err(e) => return Err(e),
-            }
+            write!(f, " {}", expr)?;
         }
         fmt::Result::Ok(())
     }
@@ -425,15 +411,9 @@ impl fmt::Display for Expr {
 
 impl fmt::Debug for Expr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match write!(f, "{:?}", self.kind) {
-            Ok(()) => (),
-            Err(e) => return Err(e),
-        }
+        write!(f, "{:?}", self.kind)?;
         for expr in &self.exprs {
-            match write!(f, " {}", expr) {
-                Ok(()) => (),
-                Err(e) => return Err(e),
-            }
+            write!(f, " {}", expr)?;
         }
         fmt::Result::Ok(())
     }

@@ -58,16 +58,15 @@ impl CodeGen {
         Ok(())
     }
 
-    /// Calculates all labels in a CodeGen instance, then resets it to be used by assebmly instructions. 
+    /// Calculates all labels in a CodeGen instance, then resets it to be used by assebmly instructions.
     /// Consumes all Label Exprs.
     fn get_labels(&mut self) -> Result<(), String> {
         // Loop through all labels:
         loop {
             // Get the label name and its relative address from get_next_label()
-            let (label, pos) = match self.get_next_label() {
-                Ok(Some(t)) => t,
-                Ok(None) => break,
-                Err(e) => return Err(e),
+            let (label, pos) = match self.get_next_label()? {
+                Some(t) => t,
+                None => break,
             };
 
             // Make sure label doesn't already exist elsewhere to prevent confusion or user error
@@ -94,9 +93,9 @@ impl CodeGen {
 
     /// Calculates the distance from the base of the WordPacket to the first label, then consumes it.
     fn get_next_label(&mut self) -> Result<Option<(String, usize)>, String> {
-        let mut relative_pos = 0;                   // Distance from base of packet
-        let mut last_packet = self.working_packet;  // Working packet from last iter of loop
-        let label;                                  // Will store the name of the label
+        let mut relative_pos = 0; // Distance from base of packet
+        let mut last_packet = self.working_packet; // Working packet from last iter of loop
+        let label; // Will store the name of the label
 
         // Loop through instructions and directives until a label is found
         loop {
@@ -106,30 +105,22 @@ impl CodeGen {
                 None => return Ok(None),
             };
 
-            match kind {
-                // If it's an instruction, get the number of bytes it takes up
-                ExprKind::Instruction(_) => match self.instruction_len() {
-                    Ok(n) => relative_pos += n,
-                    Err(e) => return Err(e),
-                }
-                // If it's a directive, call perform directive action and/or get amount of memory in bytes that should be displaced
-                ExprKind::Directive(_) => match self.directive_len() {
-                    Ok(n) => {
-                        if last_packet != self.working_packet {
-                            relative_pos = 0;
-                        }
-
-                        relative_pos += n;
-                    }
-                    Err(e) => return Err(e),
-                }
+            let len: usize = match kind {
+                ExprKind::Instruction(_) => self.instruction_len()?,
+                ExprKind::Directive(_) => self.directive_len()?,
                 // If it's a label, break out of the loop after setting variable 'label' to the label name
                 ExprKind::Label(l) => {
                     label = l.to_owned();
                     break;
                 }
                 _ => panic!("Codegen error - get_next_label() encountered a non-instruction, directive, or label value... oops"),
+            };
+
+            if last_packet != self.working_packet {
+                relative_pos = 0;
             }
+
+            relative_pos += len;
 
             // Update last packet (in case there was an org) and move on to next Expr in the program
             last_packet = self.working_packet;
@@ -189,18 +180,15 @@ impl CodeGen {
 
         match kind {
             TokenKind::Org => {
-                if expr.exprs.len() > 1 || expr.exprs.is_empty() {
+                if expr.exprs.len() != 1 {
                     return Err("Wrong number of parameters given to org".to_owned());
                 }
-                match self.expression(&expr.exprs[0]) {
-                    Ok(n) => {
-                        self.out.push(WordPacket(n as usize, vec![]));
-                        self.working_packet = self.out.len() - 1;
 
-                        return Ok(0);
-                    }
-                    Err(e) => return Err(e),
-                }
+                let evaluated = self.expression(&expr.exprs[0])? as usize;
+                self.out.push(WordPacket(evaluated, vec![]));
+                self.working_packet = self.out.len() - 1;
+
+                return Ok(0);
             }
             TokenKind::Db => todo!(),
             TokenKind::Fill => todo!(),
@@ -250,10 +238,9 @@ impl CodeGen {
             _ => panic!("Parsing error put an invalid condition in an instruction... oops"),
         };
 
-        let mut data = match self.op(exprs) {
-            Ok(n) if !n.is_empty() => n,
-            Ok(n) => panic!("Codegen error, only {} returned by op()... oops", n.len()),
-            Err(e) => return Err(e),
+        let mut data = match self.op(exprs)? {
+            n if !n.is_empty() => n,
+            n => panic!("Codegen error, only {} returned by op()... oops", n.len()),
         };
 
         data[0] |= cond_binary << 6;
@@ -283,10 +270,7 @@ impl CodeGen {
 
         let mut params: Vec<(char, i16)> = vec![];
         for expr in &exprs[0].exprs {
-            match self.parameter(expr) {
-                Ok(t) => params.push(t),
-                Err(e) => return Err(e),
-            };
+            params.push(self.parameter(expr)?);
         }
 
         let mut opcode = match params.len() {
@@ -442,10 +426,7 @@ impl CodeGen {
                 TokenKind::Pc => ('r', 7),
                 _ => panic!("Parser error did not put a valid register in Register struct... oops\n  put: {:?}", r),
             }),
-            ExprKind::Expression => match self.expression(&expr) {
-                Ok(n) => Ok(('i', n)),
-                Err(e) => return Err(e),
-            }
+            ExprKind::Expression => Ok(('i', self.expression(&expr)?)),
             _ => panic!("Parser error did not put in a register, immediate, or label... oops"),
         }
     }
@@ -495,14 +476,12 @@ impl CodeGen {
                 if expr.exprs.len() > 1 || expr.exprs.is_empty() {
                     return Err("Wrong number of parameters given to org".to_owned());
                 }
-                match self.expression(&expr.exprs[0]) {
-                    Ok(n) => {
-                        self.out.push(WordPacket(n as usize, vec![]));
-                        self.working_packet = self.out.len() - 1;
-                        return Ok(Some(()));
-                    }
-                    Err(e) => return Err(e),
-                }
+
+                let evaluated = self.expression(&expr.exprs[0])? as usize;
+                self.out.push(WordPacket(evaluated, vec![]));
+                self.working_packet = self.out.len() - 1;
+
+                return Ok(Some(()));
             }
             TokenKind::Db => todo!(),
             TokenKind::Fill => todo!(),
@@ -516,15 +495,9 @@ impl CodeGen {
 
 impl fmt::Display for WordPacket {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match write!(f, "Address: 0x{:0>4X}\n", self.0) {
-            Ok(()) => (),
-            Err(e) => return Err(e),
-        }
+        write!(f, "Address: 0x{:0>4X}\n", self.0)?;
         for val in &self.1 {
-            match write!(f, "  0x{:0>4X}\n", val) {
-                Ok(()) => (),
-                Err(e) => return Err(e),
-            }
+            write!(f, "  0x{:0>4X}\n", val)?;
         }
         fmt::Result::Ok(())
     }
