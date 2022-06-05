@@ -13,8 +13,10 @@ use parser::*;
 struct ErrString(String); // for using ? to print errors
 
 fn main() -> Result<(), ErrString> {
-    let filename = "test.beeasm";
-    let program = fileio::read_to_string(filename)?;
+    let in_filename = "test.beeasm";
+    let out_filename = "test.bin";
+
+    let program = fileio::read_to_string(in_filename)?;
 
     let tokens = Lexer::new(&program).tokenize()?;
 
@@ -24,9 +26,11 @@ fn main() -> Result<(), ErrString> {
 
     codegen.assemble()?;
 
-    for i in codegen.out {
+    for i in &codegen.out {
         print!("{}", i);
     }
+
+    fileio::FileGen::new(out_filename, codegen.out);
 
     Ok(())
 }
@@ -34,7 +38,7 @@ fn main() -> Result<(), ErrString> {
 // For using ? to print errors
 impl fmt::Debug for ErrString {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "\n{}\n", self.0)
+        write!(f, "\n\n{}\n\n", self.0)
     }
 }
 

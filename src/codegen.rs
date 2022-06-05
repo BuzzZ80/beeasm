@@ -493,6 +493,16 @@ impl CodeGen {
     }
 }
 
+impl WordPacket {
+    pub fn intersects(&self, other: &WordPacket) -> bool {
+        if self.0 + (self.1.len() * 2) >= other.0 || other.0 + (other.1.len() * 2) >= self.0 {
+            true
+        } else {
+            false
+        }
+    }
+}
+
 impl fmt::Display for WordPacket {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Address: 0x{:0>4X}\n", self.0)?;
