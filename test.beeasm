@@ -1,9 +1,16 @@
-org 0x10
-mov 0x40 -> g0
-loop1:
-ldr 0x0 -> g0
-jmp loop1
-
-org 0x20
+org 0x0010
+STR G0 -> memory
+loop:
+ jmp loop
+mov g0 > g1
 loop2:
-jmp loop2
+ jmp loop2
+
+
+
+org 0x1000
+memory:
+
+org 0x50 
+uwu:
+jmp uwu

@@ -40,10 +40,10 @@ fn main() {
         Ok(()) => (),
         Err(e) => {
             println!("{}", e);
-        },
+        }
     };
-    
+
     for i in codegen.out {
         print!("{}", i);
-    };
+    }
 }

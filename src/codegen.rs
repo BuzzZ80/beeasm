@@ -1,7 +1,7 @@
-use std::fmt;
-use std::collections::HashMap;
 use super::lexer::TokenKind;
 use super::parser::{Expr, ExprKind};
+use std::collections::HashMap;
+use std::fmt;
 
 pub struct CodeGen {
     pub out: Vec<WordPacket>,
@@ -13,19 +13,18 @@ pub struct CodeGen {
 
 /// Stores starting address and data for every org directive.
 /// Created so that overlaps can be easily detected.
-pub struct WordPacket (usize,Vec<i16>);
+pub struct WordPacket(usize, Vec<i16>);
 
 impl CodeGen {
     pub fn new(exprs: Vec<Expr>) -> Self {
         Self {
-            out: vec![WordPacket (0, vec![])],
+            out: vec![WordPacket(0, vec![])],
             working_packet: 0,
             labels: HashMap::new(),
             exprs,
             index: 0,
         }
     }
-
 
     pub fn assemble(&mut self) -> Result<(), String> {
         match self.get_labels() {
@@ -57,63 +56,75 @@ impl CodeGen {
     }
 
     fn get_labels(&mut self) -> Result<(), String> {
-        let to_return = loop {
-            let mut relative_address = 0;
-            let label = match self.get_next_label() {
-                Ok(Some( (label, pos) )) => {
-                    relative_address += pos;
-                    label
-                }
-                Ok(None) => break Ok(()),
-                Err(e) => break Err(e),
+        let mut cum_pos = 0;
+        let mut last_packet = self.working_packet;
+        loop {
+            let (label, pos) = match self.get_next_label() {
+                Ok(Some(t)) => t,
+                Ok(None) => break,
+                Err(e) => return Err(e),
             };
 
             match self.labels.get(&label) {
-                Some(_) => return Err(format!("Duplicate label \"{}\" found", label)),
-                None => ()
+                Some(_) => return Err(format!(r#"Duplicate label "{}" found"#, label)),
+                None => {}
             };
 
-            self.labels.insert(label, relative_address);
-        };
+            if last_packet != self.working_packet {
+                //cum_pos = 0;
+            }
+
+            cum_pos += pos;
+
+            self.labels.insert(label, cum_pos);
+        }
 
         self.index = 0;
+        self.out.clear();
 
-        to_return
+        Ok(())
     }
 
     fn get_next_label(&mut self) -> Result<Option<(String, usize)>, String> {
-        let mut words = 0;
-        let label = loop {
+        let mut relative_pos = 0;
+        let mut last_packet = self.working_packet;
+        let label;
+
+        loop {
             let kind = match self.exprs.get(self.index) {
-                Some(expr) => &expr.kind, 
+                Some(expr) => &expr.kind,
                 None => return Ok(None),
             };
 
-
             match kind {
                 ExprKind::Instruction(_) => match self.instruction_len() {
-                    Ok(n) => words += n,
+                    Ok(n) => relative_pos += n,
                     Err(e) => return Err(e),
                 }
-                ExprKind::Directive(_) => match self.directive_len(&mut words) {
-                    Ok(n) => words += n,
+                ExprKind::Directive(_) => match self.directive_len() {
+                    Ok(n) => {
+                        if last_packet != self.working_packet {
+                            relative_pos = 0;
+                        }
+
+                        relative_pos += n;
+                    }
                     Err(e) => return Err(e),
                 }
-                ExprKind::Label(s) => break s.to_owned(),
-                _ => panic!("Non-instruction/label/directive found in get_next_label... oops"),
+                ExprKind::Label(l) => {
+                    label = l.to_owned();
+                    break;
+                }
+                _ => panic!("Codegen error - get_next_label() encountered a non-instruction, directive, or label value... oops"),
             }
 
+            last_packet = self.working_packet;
             self.index += 1;
-        };
+        }
 
         self.exprs.remove(self.index);
 
-        for i in &self.out {
-            print!("{}", i);
-        };
-
-        println!();
-        Ok(Some( (label, words + self.out[self.working_packet].0) ))
+        Ok(Some((label, relative_pos)))
     }
 
     fn instruction_len(&self) -> Result<usize, String> {
@@ -126,26 +137,34 @@ impl CodeGen {
             _ => panic!("instruction_len called on non-instruction value... oops"),
         };
 
-        let data = match self.op(exprs) {
-            Ok(n) if !n.is_empty() => n,
-            Ok(n) => panic!("Codegen error, only {} returned by op()... oops", n.len()),
-            Err(e) => return Err(e),
-        };
+        if exprs.len() > 1 || exprs.is_empty() {
+            panic!("Parsing error put multiple or no Exprs within an Instruction... oops")
+        }
 
-        data[0];
+        let mut words = 2; //2 bytes for intial opcode
 
-        Ok(data.len())
+        for expr in &exprs[0].exprs {
+            match expr.kind {
+                ExprKind::Register(_) => (),
+                ExprKind::Expression => words += 2,
+                _ => panic!(
+                    "Parsing error placed a non-expression or register value in an Op... oops"
+                ),
+            }
+        }
+
+        Ok(words)
     }
 
-    fn directive_len(&mut self, single_label_adr: &mut usize) -> Result<usize, String> {
+    fn directive_len(&mut self) -> Result<usize, String> {
         let expr = match self.exprs.get(self.index) {
             Some(expr) if matches!(expr.kind, ExprKind::Directive(_)) => expr,
-            _ => panic!("directive_len called on non-instruction value... oops")
+            _ => panic!("directive_len called on non-instruction value... oops"),
         };
 
         let kind = match &expr.kind {
             ExprKind::Directive(k) => k,
-            _ => panic!("directive() called on a non-directive expr... oops"), 
+            _ => panic!("directive() called on a non-directive expr... oops"),
         };
 
         match kind {
@@ -155,10 +174,8 @@ impl CodeGen {
                 }
                 match self.expression(&expr.exprs[0]) {
                     Ok(n) => {
-                        self.out.push(WordPacket (n as usize, vec![]));
+                        self.out.push(WordPacket(n as usize, vec![]));
                         self.working_packet = self.out.len() - 1;
-
-                        *single_label_adr = 0;
 
                         return Ok(0);
                     }
@@ -177,8 +194,8 @@ impl CodeGen {
             Some(expr) => match &expr.kind {
                 ExprKind::Instruction(_) => self.instruction(),
                 ExprKind::Directive(_) => self.directive(),
-                _ => todo!(),
-            }
+                k => panic!("assemble_single_expr was called on a(n) {:?}, which is not supported.", k),
+            },
             None => return Ok(None),
         }
     }
@@ -339,8 +356,8 @@ impl CodeGen {
                         _ => {
                             return Err(format!(
                                 "{:?} does not take an immediate and then a register",
-                                op_kind)
-                            )
+                                op_kind
+                            ))
                         }
                     },
                     'i' => return Err("Instruction does not support these parameters".to_owned()),
@@ -439,14 +456,14 @@ impl CodeGen {
     fn directive(&mut self) -> Result<Option<()>, String> {
         let expr = match self.exprs.get(self.index) {
             Some(expr) if matches!(expr.kind, ExprKind::Directive(_)) => expr,
-            _ => panic!("directive() called on non-instruction value... oops")
+            _ => panic!("directive() called on non-instruction value... oops"),
         };
 
         self.index += 1;
 
         let kind = match &expr.kind {
             ExprKind::Directive(k) => k,
-            _ => panic!("directive() called on a non-directive expr... oops"), 
+            _ => panic!("directive() called on a non-directive expr... oops"),
         };
 
         match kind {
@@ -456,9 +473,9 @@ impl CodeGen {
                 }
                 match self.expression(&expr.exprs[0]) {
                     Ok(n) => {
-                        self.out.push(WordPacket (n as usize, vec![]));
+                        self.out.push(WordPacket(n as usize, vec![]));
                         self.working_packet = self.out.len() - 1;
-                        return Ok(Some(()))
+                        return Ok(Some(()));
                     }
                     Err(e) => return Err(e),
                 }
