@@ -56,8 +56,6 @@ impl CodeGen {
     }
 
     fn get_labels(&mut self) -> Result<(), String> {
-        let mut cum_pos = 0;
-        let mut last_packet = self.working_packet;
         loop {
             let (label, pos) = match self.get_next_label() {
                 Ok(Some(t)) => t,
@@ -70,13 +68,9 @@ impl CodeGen {
                 None => {}
             };
 
-            if last_packet != self.working_packet {
-                cum_pos = self.out[self.working_packet].0;
-            }
+            let base = self.out[self.working_packet].0;
 
-            cum_pos += pos;
-
-            self.labels.insert(label, cum_pos);
+            self.labels.insert(label, pos + base);
         }
 
         self.index = 0;
