@@ -1,18 +1,24 @@
-use std::fs;
-
-mod codegen;
 mod lexer;
 mod parser;
+mod codegen;
+mod fileio;
 
-use codegen::*;
 use lexer::*;
 use parser::*;
+use codegen::*;
+use fileio::*;
 
 fn main() {
     let filename = "test.beeasm";
-    let my_program = fs::read_to_string(filename).unwrap();
+    let program = match fileio::read_to_string(filename) {
+        Ok(s) => s,
+        Err(e) => {
+            println!("{}", e);
+            return;
+        }
+    };
 
-    let tokens = match Lexer::new(&my_program).tokenize() {
+    let tokens = match Lexer::new(&program).tokenize() {
         Ok(vec) => {
             //println!("{:#?}", vec);
             vec

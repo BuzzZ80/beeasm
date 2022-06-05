@@ -231,11 +231,25 @@ fn tokenize_identifier(data: &str) -> Result<Token, String> {
         "gte" => TokenKind::Gte,
         "cr" | "br" => TokenKind::Cr,
         "ncr" | "nbr" => TokenKind::Ncr,
+        s => TokenKind::Label(s.to_owned()),
+    };
+
+    Ok(Token(token_kind, bytes_read, 0))
+}
+
+/// Tokenizes a single directive
+fn tokenize_directive(data: &str) -> Result<Token, String> {
+    let (read, bytes_read) = match take_while(data, |c| c == '_' || c == '.' || c.is_alphanumeric()) {
+        Ok(s) => s,
+        Err(e) => return Err(e),
+    };
+
+    let token_kind = match &read.to_lowercase()[..] {
         ".org" => TokenKind::Org,
         ".db" => TokenKind::Db,
         ".fill" => TokenKind::Fill,
         ".strz" => TokenKind::Strz,
-        s => TokenKind::Label(s.to_owned()),
+        s => return Err(format!("Unknown dot directive '{}'.", s)),
     };
 
     Ok(Token(token_kind, bytes_read, 0))
@@ -261,20 +275,11 @@ pub fn tokenize_one_token(data: &str) -> Result<Token, String> {
         '/' => Token(TokenKind::Slash, 1, 0),
         '(' => Token(TokenKind::OpenParen, 1, 0),
         ')' => Token(TokenKind::CloseParen, 1, 0),
-        '0'..='9' | '$' | '%' => match tokenize_number(data) {
-            Ok(n) => n,
-            Err(e) => return Err(e),
-        },
-        '"' => match tokenize_string_literal(data) {
-            Ok(t) => t,
-            Err(e) => return Err(e),
-        },
-        c @ '_' | c if c.is_alphanumeric() => match tokenize_identifier(data) {
-            Ok(s) => s,
-            Err(e) => return Err(e),
-        },
-
-        _ => return Err(format!("Unexpected character {}", next)),
+        '.' => tokenize_directive(data)?,
+        '0'..='9' | '$' | '%' => tokenize_number(data)?,
+        '"' => tokenize_string_literal(data)?,
+        c @ '_' | c if c.is_alphanumeric() => tokenize_identifier(data)?,
+        c => return Err(format!("Unexpected character {}", c)),
     };
 
     Ok(token)
