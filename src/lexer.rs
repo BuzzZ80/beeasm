@@ -231,10 +231,10 @@ fn tokenize_identifier(data: &str) -> Result<Token, String> {
         "gte" => TokenKind::Gte,
         "cr" | "br" => TokenKind::Cr,
         "ncr" | "nbr" => TokenKind::Ncr,
-        "org" => TokenKind::Org,
-        "db" => TokenKind::Db,
-        "fill" => TokenKind::Fill,
-        "strz" => TokenKind::Strz,
+        ".org" => TokenKind::Org,
+        ".db" => TokenKind::Db,
+        ".fill" => TokenKind::Fill,
+        ".strz" => TokenKind::Strz,
         s => TokenKind::Label(s.to_owned()),
     };
 

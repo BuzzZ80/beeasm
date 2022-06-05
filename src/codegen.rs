@@ -94,21 +94,25 @@ impl CodeGen {
 
     /// Calculates the distance from the base of the WordPacket to the first label, then consumes it.
     fn get_next_label(&mut self) -> Result<Option<(String, usize)>, String> {
-        let mut relative_pos = 0;
-        let mut last_packet = self.working_packet;
-        let label;
+        let mut relative_pos = 0;                   // Distance from base of packet
+        let mut last_packet = self.working_packet;  // Working packet from last iter of loop
+        let label;                                  // Will store the name of the label
 
+        // Loop through instructions and directives until a label is found
         loop {
+            // Get the ExprKind of the next expr in the program (should only be instruction or directive)
             let kind = match self.exprs.get(self.index) {
                 Some(expr) => &expr.kind,
                 None => return Ok(None),
             };
 
             match kind {
+                // If it's an instruction, get the number of bytes it takes up
                 ExprKind::Instruction(_) => match self.instruction_len() {
                     Ok(n) => relative_pos += n,
                     Err(e) => return Err(e),
                 }
+                // If it's a directive, call perform directive action and/or get amount of memory in bytes that should be displaced
                 ExprKind::Directive(_) => match self.directive_len() {
                     Ok(n) => {
                         if last_packet != self.working_packet {
@@ -119,6 +123,7 @@ impl CodeGen {
                     }
                     Err(e) => return Err(e),
                 }
+                // If it's a label, break out of the loop after setting variable 'label' to the label name
                 ExprKind::Label(l) => {
                     label = l.to_owned();
                     break;
@@ -126,6 +131,7 @@ impl CodeGen {
                 _ => panic!("Codegen error - get_next_label() encountered a non-instruction, directive, or label value... oops"),
             }
 
+            // Update last packet (in case there was an org) and move on to next Expr in the program
             last_packet = self.working_packet;
             self.index += 1;
         }
