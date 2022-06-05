@@ -13,7 +13,7 @@ pub struct CodeGen {
 
 /// Stores starting address and data for every org directive.
 /// Created so that overlaps can be easily detected.
-pub struct WordPacket(usize, Vec<i16>);
+pub struct WordPacket(pub usize, pub Vec<i16>);
 
 impl CodeGen {
     pub fn new(exprs: Vec<Expr>) -> Self {
@@ -26,7 +26,9 @@ impl CodeGen {
         }
     }
 
+    /// Fills self.out with WordPackets of data according to the assembly file
     pub fn assemble(&mut self) -> Result<(), String> {
+        // Calculate labels before-hand
         match self.get_labels() {
             Ok(()) => (),
             Err(e) => {
@@ -38,6 +40,7 @@ impl CodeGen {
             }
         };
 
+        // Iterate through all instructions and directives now, returning any errors and quitting at the end of the file
         loop {
             match self.assemble_single_expr() {
                 Ok(Some(())) => (),
@@ -55,30 +58,41 @@ impl CodeGen {
         Ok(())
     }
 
+    /// Calculates all labels in a CodeGen instance, then resets it to be used by assebmly instructions. 
+    /// Consumes all Label Exprs.
     fn get_labels(&mut self) -> Result<(), String> {
+        // Loop through all labels:
         loop {
+            // Get the label name and its relative address from get_next_label()
             let (label, pos) = match self.get_next_label() {
                 Ok(Some(t)) => t,
                 Ok(None) => break,
                 Err(e) => return Err(e),
             };
 
+            // Make sure label doesn't already exist elsewhere to prevent confusion or user error
             match self.labels.get(&label) {
                 Some(_) => return Err(format!(r#"Duplicate label "{}" found"#, label)),
                 None => {}
             };
 
+            // Gets the base of the current WordPacket
             let base = self.out[self.working_packet].0;
 
+            // Inserts label from get_next_label() at the labels position from the base plus the base
             self.labels.insert(label, pos + base);
         }
 
+        // Reset the codegen struct so that it can be used by assembly instructions
         self.index = 0;
+        self.working_packet = 0;
         self.out.clear();
+        self.out.push(WordPacket(0, vec![])); // Imply an org 0x0000
 
         Ok(())
     }
 
+    /// Calculates the distance from the base of the WordPacket to the first label, then consumes it.
     fn get_next_label(&mut self) -> Result<Option<(String, usize)>, String> {
         let mut relative_pos = 0;
         let mut last_packet = self.working_packet;
@@ -121,7 +135,9 @@ impl CodeGen {
         Ok(Some((label, relative_pos)))
     }
 
+    /// Get the number of bytes that a valid Instruction takes
     fn instruction_len(&self) -> Result<usize, String> {
+        // Get the op from within the Instruction, if an Instruction exists
         let exprs = match self.exprs.get(self.index) {
             Some(Expr {
                 kind: ExprKind::Instruction(_),
@@ -131,25 +147,29 @@ impl CodeGen {
             _ => panic!("instruction_len called on non-instruction value... oops"),
         };
 
-        if exprs.len() > 1 || exprs.is_empty() {
+        // Makes sure there's (only) one op, otherwise there was a parser error
+        if exprs.len() != 1 {
             panic!("Parsing error put multiple or no Exprs within an Instruction... oops")
         }
 
-        let mut words = 2; //2 bytes for intial opcode
+        let mut bytes = 2; // Start with 2 bytes for intial opcode
 
+        // Go through the parameters of the op and add a word for every one that takes up memory (just expressions)
         for expr in &exprs[0].exprs {
             match expr.kind {
                 ExprKind::Register(_) => (),
-                ExprKind::Expression => words += 2,
+                ExprKind::Expression => bytes += 2,
                 _ => panic!(
                     "Parsing error placed a non-expression or register value in an Op... oops"
                 ),
             }
         }
 
-        Ok(words)
+        // Return the number of words in the instruction
+        Ok(bytes)
     }
 
+    /// Get the number of bytes that a valid Directive takes in memory
     fn directive_len(&mut self) -> Result<usize, String> {
         let expr = match self.exprs.get(self.index) {
             Some(expr) if matches!(expr.kind, ExprKind::Directive(_)) => expr,
@@ -183,12 +203,16 @@ impl CodeGen {
         };
     }
 
+    /// Takes an Instruction or Directive and modifies self accordingly
     fn assemble_single_expr(&mut self) -> Result<Option<()>, String> {
         match self.exprs.get(self.index) {
             Some(expr) => match &expr.kind {
                 ExprKind::Instruction(_) => self.instruction(),
                 ExprKind::Directive(_) => self.directive(),
-                k => panic!("assemble_single_expr was called on a(n) {:?}, which is not supported.", k),
+                k => panic!(
+                    "assemble_single_expr was called on a(n) {:?}, which is not supported.",
+                    k
+                ),
             },
             None => return Ok(None),
         }
