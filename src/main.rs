@@ -26,9 +26,9 @@ fn main() -> Result<(), ErrString> {
 
     codegen.assemble()?;
 
-    for i in &codegen.out {
-        println!("0x{:0>4X}", i);
-    }
+    //for i in &codegen.out {
+    //    println!("0x{:0>4X}", i);
+    //}
 
     let filegen = FileGen::new(out_filename, codegen.out);
     filegen.generate_file()?;

@@ -492,8 +492,7 @@ impl CodeGen {
 
                 let fill_value = fill_value as u8;
 
-                for i in self.out.len()..until_addr {
-                    println!("{}", i);
+                for _ in self.out.len()..until_addr {
                     self.out.push(fill_value);
                 }
             }
