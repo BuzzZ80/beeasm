@@ -1,20 +1,15 @@
 use super::lexer::TokenKind;
 use super::parser::{Expr, ExprKind};
 use std::collections::HashMap;
-use std::fmt;
 
 pub struct CodeGen {
-    pub out: Vec<i16>,
+    pub out: Vec<u8>,
     labels: HashMap<String, usize>,
     exprs: Vec<Expr>,
     index: usize,
     org: usize,
     org_change: bool,
 }
-
-/// Stores starting address and data for every org directive.
-/// Created so that overlaps can be easily detected.
-pub struct WordPacket(pub usize, pub Vec<i16>);
 
 impl CodeGen {
     pub fn new(exprs: Vec<Expr>) -> Self {
@@ -184,13 +179,22 @@ impl CodeGen {
                 self.org = self.expression(&expr.exprs[0])? as usize;
                 self.org_change = true;
 
-                return Ok(0);
+                Ok(0)
             }
             TokenKind::Db => todo!(),
             TokenKind::Fill => todo!(),
+            TokenKind::FillTo => {
+                if expr.exprs.len() != 2 {
+                    return Err("Wrong number of parameters given to fillto".to_owned());
+                }
+
+                let until_addr = self.expression(&expr.exprs[0])? as usize;
+
+                Ok(until_addr - self.out.len())
+            }
             TokenKind::Strz => todo!(),
             _ => panic!("Parser error put non-directive in directive expr... oops"),
-        };
+        }
     }
 
     /// Takes an Instruction or Directive and modifies self accordingly
@@ -242,7 +246,9 @@ impl CodeGen {
         data[0] |= cond_binary << 6;
 
         // Append to out
-        self.out.append(&mut data);
+        for i in data {
+            self.out.extend_from_slice(&i.to_le_bytes());
+        }
 
         Ok(Some(()))
     }
@@ -469,7 +475,7 @@ impl CodeGen {
 
         match kind {
             TokenKind::Org => {
-                if expr.exprs.len() > 1 || expr.exprs.is_empty() {
+                if expr.exprs.len() != 1 {
                     return Err("Wrong number of parameters given to org".to_owned());
                 }
 
@@ -479,30 +485,29 @@ impl CodeGen {
             }
             TokenKind::Db => todo!(),
             TokenKind::Fill => todo!(),
+            TokenKind::FillTo => {
+                if expr.exprs.len() != 2 {
+                    return Err("Wrong number of parameters given to fillto".to_owned());
+                }
+
+                let until_addr = self.expression(&expr.exprs[0])? as usize;
+                let fill_value = self.expression(&expr.exprs[1])?;
+
+                if fill_value > u8::MAX as i16 || fill_value < u8::MIN as i16 {
+                    return Err(format!("{:0>4X} is not a byte value", fill_value))
+                }
+
+                let fill_value = fill_value as u8;
+
+                for i in self.out.len()..until_addr {
+                    println!("{}", i);
+                    self.out.push(fill_value);
+                }
+            }
             TokenKind::Strz => todo!(),
             _ => panic!("Parser error put non-directive in directive expr... oops"),
         };
 
         Ok(Some(()))
-    }
-}
-
-impl WordPacket {
-    pub fn intersects(&self, other: &WordPacket) -> bool {
-        if self.0 + (self.1.len() * 2) >= other.0 || other.0 + (other.1.len() * 2) >= self.0 {
-            true
-        } else {
-            false
-        }
-    }
-}
-
-impl fmt::Display for WordPacket {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Address: 0x{:0>4X}\n", self.0)?;
-        for val in &self.1 {
-            write!(f, "  0x{:0>4X}\n", val)?;
-        }
-        fmt::Result::Ok(())
     }
 }

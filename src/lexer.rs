@@ -77,6 +77,7 @@ pub enum TokenKind {
     Org,
     Db,
     Fill,
+    FillTo,
     Strz,
     //Other
     None,
@@ -236,6 +237,7 @@ fn tokenize_directive(data: &str) -> Result<Token, String> {
         ".org" => TokenKind::Org,
         ".db" => TokenKind::Db,
         ".fill" => TokenKind::Fill,
+        ".fillto" => TokenKind::FillTo,
         ".strz" => TokenKind::Strz,
         s => return Err(format!("Unknown dot directive '{}'.", s)),
     };

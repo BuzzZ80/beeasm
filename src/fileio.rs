@@ -3,7 +3,7 @@ use std::fs;
 
 pub struct FileGen {
     out_filename: String,
-    data: Vec<i16>,
+    data: Vec<u8>,
 }
 
 pub fn read_to_string(filename: &str) -> Result<String, String> {
@@ -17,7 +17,7 @@ pub fn read_to_string(filename: &str) -> Result<String, String> {
 }
 
 impl FileGen {
-    pub fn new(out_filename: &str, data: Vec<i16>) -> Self {
+    pub fn new(out_filename: &str, data: Vec<u8>) -> Self {
         Self {
             out_filename: out_filename.to_owned(),
             data,
@@ -36,11 +36,9 @@ impl FileGen {
             Err(e) => return Err(format!("Error clearing output file.\n Error:\n  {}", e)),
         };
 
-        for i in &self.data {
-            match f.write(&i.to_le_bytes()) {
-                Ok(_) => (),
-                Err(e) => return Err(format!("Error writing to output file.\n Error:\n  {}", e)),
-            }
+        match f.write_all(&self.data) {
+            Ok(_) => (),
+            Err(e) => return Err(format!("Error writing to output file.\n Error:\n  {}", e)),
         }
 
         Ok(())

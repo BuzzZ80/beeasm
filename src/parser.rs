@@ -328,7 +328,8 @@ impl Parser {
         };
 
         let kind = match &directive_token.0 {
-            TokenKind::Org | TokenKind::Db | TokenKind::Fill | TokenKind::Strz => {
+            TokenKind::Org | TokenKind::Db | TokenKind::Fill | TokenKind::Strz 
+            | TokenKind::FillTo => {
                 &directive_token.0
             }
             _ => return Ok(None),

@@ -1,8 +1,12 @@
 .org 0x6000
-mov g0 -> g0
-label:
- jmp label
- 
+MOV G0 -> G0 ; idk fuck you lmao
+loop1:
+  jmp loop1
+
+.fillto 0x10 0x00
 .org 0x6000
-label2:
- jmp label2
+MOV G0 -> G0 ; idk fuck you again lol
+loop2: 
+  jmp loop2
+
+exit
