@@ -291,6 +291,7 @@ impl Parser {
                 exprs: vec![],
                 line: expr_token.2,
             }),
+            TokenKind::Minus
             _ => return Ok(None),
         };
 
@@ -299,11 +300,12 @@ impl Parser {
         Ok(Some(expr))
     }
 
-    /*
-    fn unary(&mut self) -> Result<Option<Expr>, String> {
-        Err("UNIMPLEMENTED/TODO".to_owned())
-    }
+    
+    //fn unary(&mut self) -> Result<Option<Expr>, String> {
+        
+    //}
 
+    /*
     fn binary(&mut self) -> Result<Option<Expr>, String> {
         Err("UNIMPLEMENTED/TODO".to_owned())
     }
