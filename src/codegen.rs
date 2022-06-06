@@ -493,7 +493,7 @@ impl CodeGen {
                 let len = self.expression(&expr.exprs[0])? as usize;
                 let fill_value = self.expression(&expr.exprs[1])?;
 
-                if fill_value > u8::MAX as u16 || fill_value < u8::MIN as u16 {
+                if fill_value > u8::MAX as u16 {
                     return Err(format!("{:0>4X} is not a byte value", fill_value));
                 }
 
