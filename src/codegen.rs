@@ -175,7 +175,15 @@ impl CodeGen {
                 Ok(0)
             }
             TokenKind::Db => todo!(),
-            TokenKind::Fill => todo!(),
+            TokenKind::Fill => {
+                if expr.exprs.len() != 2 {
+                    return Err("Wrong number of parameters given to fill".to_owned());
+                }
+
+                let len = self.expression(&expr.exprs[0])? as usize;
+
+                Ok(len)
+            }
             TokenKind::FillTo => {
                 if expr.exprs.len() != 2 {
                     return Err("Wrong number of parameters given to fillto".to_owned());
@@ -477,10 +485,27 @@ impl CodeGen {
                 return Ok(Some(()));
             }
             TokenKind::Db => todo!(),
-            TokenKind::Fill => todo!(),
-            TokenKind::FillTo => {
+            TokenKind::Fill => {
                 if expr.exprs.len() != 2 {
                     return Err("Wrong number of parameters given to fillto".to_owned());
+                }
+
+                let len = self.expression(&expr.exprs[0])? as usize;
+                let fill_value = self.expression(&expr.exprs[1])?;
+
+                if fill_value > u8::MAX as i16 || fill_value < u8::MIN as i16 {
+                    return Err(format!("{:0>4X} is not a byte value", fill_value));
+                }
+
+                let fill_value = fill_value as u8;
+
+                for _ in 0..len {
+                    self.out.push(fill_value);
+                }
+            },
+            TokenKind::FillTo => {
+                if expr.exprs.len() != 2 {
+                    return Err("Wrong number of parameters given to fill".to_owned());
                 }
 
                 let until_addr = self.expression(&expr.exprs[0])? as usize;

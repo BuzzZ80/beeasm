@@ -3,7 +3,7 @@ MOV G0 -> G0
 loop1:
   jmp loop1
 
-.fillto 0x1000 0x00
+.fill 0x10 0x00
 .org 0x6000
 MOV G0 -> G0
 loop2: 
