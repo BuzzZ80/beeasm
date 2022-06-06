@@ -3,7 +3,7 @@ An assembler for the Bee16
 
 # Building
 Thanks to the beauty of rust, all you need to do to build this
-`cargo build`
+`cargo build --release`
 in the main directory
 
 # Use
