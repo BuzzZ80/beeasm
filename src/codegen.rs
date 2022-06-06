@@ -226,7 +226,7 @@ impl CodeGen {
             _ => return Ok(None),
         };
 
-        let cond_binary: i16 = match cond_kind {
+        let cond_binary: u16 = match cond_kind {
             TokenKind::None => 0b0000,
             TokenKind::Neq => 0b0010,
             TokenKind::Eq => 0b0011,
@@ -254,7 +254,7 @@ impl CodeGen {
         Ok(Some(()))
     }
 
-    fn op(&self, exprs: &[Expr]) -> Result<Vec<i16>, String> {
+    fn op(&self, exprs: &[Expr]) -> Result<Vec<u16>, String> {
         if exprs.len() > 1 {
             panic!("Parsing error put multiple Exprs within an Instruction... oops")
         }
@@ -271,7 +271,7 @@ impl CodeGen {
             }
         };
 
-        let mut params: Vec<(char, i16)> = vec![];
+        let mut params: Vec<(char, u16)> = vec![];
         for expr in &exprs[0].exprs {
             params.push(self.parameter(expr)?);
         }
@@ -406,7 +406,7 @@ impl CodeGen {
             }
         };
 
-        let mut output: Vec<i16> = vec![opcode];
+        let mut output: Vec<u16> = vec![opcode];
         for p in &params {
             if p.0 == 'i' {
                 output.push(p.1);
@@ -416,7 +416,7 @@ impl CodeGen {
         Ok(output)
     }
 
-    fn parameter(&self, expr: &Expr) -> Result<(char, i16), String> {
+    fn parameter(&self, expr: &Expr) -> Result<(char, u16), String> {
         match &expr.kind {
             ExprKind::Register(r) => Ok(match r {
                 TokenKind::G0 => ('r', 0),
@@ -434,7 +434,7 @@ impl CodeGen {
         }
     }
 
-    fn expression(&self, expr: &Expr) -> Result<i16, String> {
+    fn expression(&self, expr: &Expr) -> Result<u16, String> {
         let Expr {
             kind: expr_kind,
             exprs,
@@ -450,7 +450,7 @@ impl CodeGen {
             1 => match &exprs[0].kind {
                 ExprKind::Integer(n) => Ok(*n),
                 ExprKind::Label(s) => match self.labels.get(s) {
-                    Some(n) => Ok(*n as i16),
+                    Some(n) => Ok(*n as u16),
                     None => Err(format!("Label \"{}\" not found", s)),
                 },
                 _ => {
@@ -493,7 +493,7 @@ impl CodeGen {
                 let len = self.expression(&expr.exprs[0])? as usize;
                 let fill_value = self.expression(&expr.exprs[1])?;
 
-                if fill_value > u8::MAX as i16 || fill_value < u8::MIN as i16 {
+                if fill_value > u8::MAX as u16 || fill_value < u8::MIN as u16 {
                     return Err(format!("{:0>4X} is not a byte value", fill_value));
                 }
 
@@ -511,7 +511,7 @@ impl CodeGen {
                 let until_addr = self.expression(&expr.exprs[0])? as usize;
                 let fill_value = self.expression(&expr.exprs[1])?;
 
-                if fill_value > u8::MAX as i16 || fill_value < u8::MIN as i16 {
+                if fill_value > u8::MAX as u16 || fill_value < u8::MIN as u16 {
                     return Err(format!("{:0>4X} is not a byte value", fill_value));
                 }
 

@@ -13,7 +13,7 @@ pub enum ExprKind {
     Instruction(TokenKind), // Conditions only
     Op(TokenKind),          // Operations only
     Expression,
-    Integer(i16),
+    Integer(u16),
     String(String),
     Label(String),
     Register(TokenKind), // Registers only
