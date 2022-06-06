@@ -4,11 +4,12 @@ use std::collections::HashMap;
 use std::fmt;
 
 pub struct CodeGen {
-    pub out: Vec<WordPacket>,
-    working_packet: usize,
+    pub out: Vec<i16>,
     labels: HashMap<String, usize>,
     exprs: Vec<Expr>,
     index: usize,
+    org: usize,
+    org_change: bool,
 }
 
 /// Stores starting address and data for every org directive.
@@ -18,11 +19,12 @@ pub struct WordPacket(pub usize, pub Vec<i16>);
 impl CodeGen {
     pub fn new(exprs: Vec<Expr>) -> Self {
         Self {
-            out: vec![WordPacket(0, vec![])],
-            working_packet: 0,
+            out: vec![],
             labels: HashMap::new(),
             exprs,
             index: 0,
+            org: 0,
+            org_change: false,
         }
     }
 
@@ -75,18 +77,14 @@ impl CodeGen {
                 None => {}
             };
 
-            // Gets the base of the current WordPacket
-            let base = self.out[self.working_packet].0;
-
             // Inserts label from get_next_label() at the labels position from the base plus the base
-            self.labels.insert(label, pos + base);
+            self.labels.insert(label, pos + self.org);
         }
 
         // Reset the codegen struct so that it can be used by assembly instructions
         self.index = 0;
-        self.working_packet = 0;
+        self.org = 0;
         self.out.clear();
-        self.out.push(WordPacket(0, vec![])); // Imply an org 0x0000
 
         Ok(())
     }
@@ -94,7 +92,6 @@ impl CodeGen {
     /// Calculates the distance from the base of the WordPacket to the first label, then consumes it.
     fn get_next_label(&mut self) -> Result<Option<(String, usize)>, String> {
         let mut relative_pos = 0; // Distance from base of packet
-        let mut last_packet = self.working_packet; // Working packet from last iter of loop
         let label; // Will store the name of the label
 
         // Loop through instructions and directives until a label is found
@@ -116,14 +113,14 @@ impl CodeGen {
                 _ => panic!("Codegen error - get_next_label() encountered a non-instruction, directive, or label value... oops"),
             };
 
-            if last_packet != self.working_packet {
+            if self.org_change {
+                self.org_change = false;
                 relative_pos = 0;
             }
 
             relative_pos += len;
 
             // Update last packet (in case there was an org) and move on to next Expr in the program
-            last_packet = self.working_packet;
             self.index += 1;
         }
 
@@ -184,9 +181,8 @@ impl CodeGen {
                     return Err("Wrong number of parameters given to org".to_owned());
                 }
 
-                let evaluated = self.expression(&expr.exprs[0])? as usize;
-                self.out.push(WordPacket(evaluated, vec![]));
-                self.working_packet = self.out.len() - 1;
+                self.org = self.expression(&expr.exprs[0])? as usize;
+                self.org_change = true;
 
                 return Ok(0);
             }
@@ -245,8 +241,8 @@ impl CodeGen {
 
         data[0] |= cond_binary << 6;
 
-        // Append to working packet
-        self.out[self.working_packet].1.append(&mut data);
+        // Append to out
+        self.out.append(&mut data);
 
         Ok(Some(()))
     }
@@ -477,9 +473,7 @@ impl CodeGen {
                     return Err("Wrong number of parameters given to org".to_owned());
                 }
 
-                let evaluated = self.expression(&expr.exprs[0])? as usize;
-                self.out.push(WordPacket(evaluated, vec![]));
-                self.working_packet = self.out.len() - 1;
+                self.org = self.expression(&expr.exprs[0])? as usize;
 
                 return Ok(Some(()));
             }

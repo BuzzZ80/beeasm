@@ -1,12 +1,8 @@
-loop:
- jmp loop
-
-.org 0x20
-mov g0 > g1
-loop2:
- mov g0 > g1
- loop3:
- jmp loop2
- loop4:
- jmp loop3
- jmp loop4
+.org 0x6000
+mov g0 -> g0
+label:
+ jmp label
+ 
+.org 0x6000
+label2:
+ jmp label2
