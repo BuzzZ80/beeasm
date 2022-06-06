@@ -3,7 +3,7 @@ use std::fs;
 
 pub struct FileGen {
     out_filename: String,
-    packets: Vec<i16>,
+    data: Vec<i16>,
 }
 
 pub fn read_to_string(filename: &str) -> Result<String, String> {
@@ -17,10 +17,10 @@ pub fn read_to_string(filename: &str) -> Result<String, String> {
 }
 
 impl FileGen {
-    pub fn new(out_filename: &str, packets: Vec<i16>) -> Self {
+    pub fn new(out_filename: &str, data: Vec<i16>) -> Self {
         Self {
             out_filename: out_filename.to_owned(),
-            packets,
+            data,
         }
     }
 
@@ -28,16 +28,23 @@ impl FileGen {
         // create or truncate file
         let mut f = match fs::File::create(&self.out_filename) {
             Ok(f) => f,
-            Err(e) => return Err(format!("Error opening outputfile.\n Error:\n  {}", e)),
+            Err(e) => return Err(format!("Error opening output file.\n Error:\n  {}", e)),
         };
 
-        let mut output: Vec<u8> = b"uwu".to_vec();
+        match f.set_len(0) {
+            Ok(_) => (),
+            Err(e) => return Err(format!("Error clearing output file.\n Error:\n  {}", e)),
+        };
 
-        match f.write_all(&output[..]) {
-            Ok(()) => (),
-            Err(e) => return Err(format!("Couldn't write to file.\n Error:\n  {}", e)),
+        for i in &self.data {
+            match f.write(&i.to_le_bytes()) {
+                Ok(_) => (),
+                Err(e) => return Err(format!("Error writing to output file.\n Error:\n  {}", e)),
+            }
         }
 
         Ok(())
     }
+
+
 }

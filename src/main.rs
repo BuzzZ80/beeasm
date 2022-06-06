@@ -6,7 +6,7 @@ mod lexer;
 mod parser;
 
 use codegen::*;
-//use fileio::*;
+use fileio::*;
 use lexer::*;
 use parser::*;
 
@@ -30,8 +30,8 @@ fn main() -> Result<(), ErrString> {
         print!("0x{:0>4X}\n", i);
     }
 
-    //let filegen = fileio::FileGen::new(out_filename, codegen.out);
-    //filegen.generate_file()?;
+    let filegen = fileio::FileGen::new(out_filename, codegen.out);
+    filegen.generate_file()?;
 
     Ok(())
 }
