@@ -87,24 +87,16 @@ impl Parser {
         Ok(output)
     }
     pub fn parse_one_statement(&mut self) -> Result<Option<Expr>, String> {
-        match self.instruction()? {
-            Some(i) => return Ok(Some(i)),
-            None => (),
-        };
-
-        match self.directive()? {
-            Some(d) => return Ok(Some(d)),
-            None => (),
-        };
-
-        match self.label()? {
-            Some(d) => return Ok(Some(d)),
-            None => (),
-        };
-
-        match self.peek() {
-            Some(t) => Err(format!("Unexpected token '{}'", t)),
-            None => Ok(None),
+        if let Some(i) = self.instruction()? {
+            Ok(Some(i))
+        } else if let Some(d) = self.directive()? {
+            Ok(Some(d))
+        } else if let Some(l) = self.label()? {
+            Ok(Some(l))
+        } else if let Some(t) = self.peek() {
+            Err(format!("Unexpected token '{}'", t))
+        } else {
+            Ok(None)
         }
     }
 
@@ -328,10 +320,11 @@ impl Parser {
         };
 
         let kind = match &directive_token.0 {
-            TokenKind::Org | TokenKind::Db | TokenKind::Fill | TokenKind::Strz 
-            | TokenKind::FillTo => {
-                &directive_token.0
-            }
+            TokenKind::Org
+            | TokenKind::Db
+            | TokenKind::Fill
+            | TokenKind::Strz
+            | TokenKind::FillTo => &directive_token.0,
             _ => return Ok(None),
         };
 
@@ -344,13 +337,11 @@ impl Parser {
         self.next();
 
         loop {
-            match self.expression()? {
-                Some(expr) => {
-                    directive.exprs.push(expr);
-                    continue;
-                }
-                None => (),
+            if let Some(expr) = self.expression()? {
+                directive.exprs.push(expr);
+                continue;
             };
+
             match self.peek() {
                 Some(Token(TokenKind::String(s), _, line)) => {
                     directive.exprs.push(Expr {

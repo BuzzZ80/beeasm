@@ -1,5 +1,5 @@
-use std::io::prelude::*;
 use std::fs;
+use std::io::prelude::*;
 
 pub struct FileGen {
     out_filename: String,
@@ -43,6 +43,4 @@ impl FileGen {
 
         Ok(())
     }
-
-
 }

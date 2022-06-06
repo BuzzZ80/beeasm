@@ -3,7 +3,7 @@ MOV G0 -> G0 ; idk fuck you lmao
 loop1:
   jmp loop1
 
-.fillto 0x10 0x00
+.fillto 0x1000 0x00
 .org 0x6000
 MOV G0 -> G0 ; idk fuck you again lol
 loop2: 

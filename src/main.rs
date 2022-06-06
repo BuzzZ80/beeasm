@@ -27,10 +27,10 @@ fn main() -> Result<(), ErrString> {
     codegen.assemble()?;
 
     for i in &codegen.out {
-        print!("0x{:0>4X}\n", i);
+        println!("0x{:0>4X}", i);
     }
 
-    let filegen = fileio::FileGen::new(out_filename, codegen.out);
+    let filegen = FileGen::new(out_filename, codegen.out);
     filegen.generate_file()?;
 
     Ok(())

@@ -297,13 +297,12 @@ impl<'a> Lexer<'a> {
         let mut tokens = Vec::new();
 
         while self.span.0 != self.span.1 {
-            let (val, consumed) = match self.data.chars().nth(self.span.0).expect(
-                format!(
+            let (val, consumed) = match self.data.chars().nth(self.span.0).unwrap_or_else(|| {
+                panic!(
                     "Lexer object span broke.\n{:#?}\nDid you forget a '\"'?\n",
                     self
                 )
-                .as_str(),
-            ) {
+            }) {
                 c if c.is_whitespace() && c != '\n' => {
                     (TokenKind::None, skip_white_space(self.get_selected()))
                 }

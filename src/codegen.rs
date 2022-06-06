@@ -59,17 +59,10 @@ impl CodeGen {
     /// Consumes all Label Exprs.
     fn get_labels(&mut self) -> Result<(), String> {
         // Loop through all labels:
-        loop {
-            // Get the label name and its relative address from get_next_label()
-            let (label, pos) = match self.get_next_label()? {
-                Some(t) => t,
-                None => break,
-            };
-
+        while let Some((label, pos)) = self.get_next_label()? {
             // Make sure label doesn't already exist elsewhere to prevent confusion or user error
-            match self.labels.get(&label) {
-                Some(_) => return Err(format!(r#"Duplicate label "{}" found"#, label)),
-                None => {}
+            if self.labels.get(&label).is_some() {
+                return Err(format!(r#"Duplicate label "{}" found"#, label));
             };
 
             // Inserts label from get_next_label() at the labels position from the base plus the base
@@ -208,7 +201,7 @@ impl CodeGen {
                     k
                 ),
             },
-            None => return Ok(None),
+            None => Ok(None),
         }
     }
 
@@ -428,7 +421,7 @@ impl CodeGen {
                 TokenKind::Pc => ('r', 7),
                 _ => panic!("Parser error did not put a valid register in Register struct... oops\n  put: {:?}", r),
             }),
-            ExprKind::Expression => Ok(('i', self.expression(&expr)?)),
+            ExprKind::Expression => Ok(('i', self.expression(expr)?)),
             _ => panic!("Parser error did not put in a register, immediate, or label... oops"),
         }
     }
@@ -447,10 +440,10 @@ impl CodeGen {
 
         match exprs.len() {
             1 => match &exprs[0].kind {
-                ExprKind::Integer(n) => return Ok(*n),
+                ExprKind::Integer(n) => Ok(*n),
                 ExprKind::Label(s) => match self.labels.get(s) {
-                    Some(n) => return Ok(*n as i16),
-                    None => return Err(format!("Label \"{}\" not found", s)),
+                    Some(n) => Ok(*n as i16),
+                    None => Err(format!("Label \"{}\" not found", s)),
                 },
                 _ => {
                     panic!("Parser error did not put an immediate or label in expression()... oops")
@@ -494,7 +487,7 @@ impl CodeGen {
                 let fill_value = self.expression(&expr.exprs[1])?;
 
                 if fill_value > u8::MAX as i16 || fill_value < u8::MIN as i16 {
-                    return Err(format!("{:0>4X} is not a byte value", fill_value))
+                    return Err(format!("{:0>4X} is not a byte value", fill_value));
                 }
 
                 let fill_value = fill_value as u8;
