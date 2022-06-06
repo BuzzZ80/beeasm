@@ -8,8 +8,8 @@ in the main directory
 
 # Use
 
-([] means optional)
+(`[]` means optional)
 
-beeasm INPUT_FILENAME \[OUTPUT_FILENAME\]
+`beeasm INPUT_FILENAME [OUTPUT_FILENAME]`
 
 If no output filename is provided, out.bin is assumed.
