@@ -8,4 +8,8 @@ in the main directory
 
 # Use
 
-If you want to use different file names for your input/output files, you can modify main.rs, there's no command line parameters yet (coming soon).
+([] means optional)
+
+beeasm INPUT_FILENAME \[OUTPUT_FILENAME\]
+
+If no output filename is provided, out.bin is assumed.

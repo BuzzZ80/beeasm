@@ -1,11 +1,11 @@
 .org 0x6000
-MOV G0 -> G0 ; idk fuck you lmao
+MOV G0 -> G0
 loop1:
   jmp loop1
 
 .fillto 0x1000 0x00
 .org 0x6000
-MOV G0 -> G0 ; idk fuck you again lol
+MOV G0 -> G0
 loop2: 
   jmp loop2
 
