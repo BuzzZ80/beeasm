@@ -31,7 +31,7 @@ impl CodeGen {
             Err(e) => {
                 let line = match self.exprs.get(self.index) {
                     Some(n) => n.line as i32,
-                    None => -1,
+                    None => self.exprs[self.exprs.len() - 1].line as i32,
                 };
                 return Err(format!("Error on line {}:\n  {}", line, e));
             }
@@ -45,7 +45,7 @@ impl CodeGen {
                 Err(e) => {
                     let line = match self.exprs.get(self.index) {
                         Some(n) => n.line as i32,
-                        None => -1,
+                        None => self.exprs[self.exprs.len() - 1].line as i32,
                     };
                     return Err(format!("Error on line {}:\n  {}", line, e));
                 }
@@ -446,6 +446,7 @@ impl CodeGen {
             _ => panic!("Codegen error, expression() was called on a non-expression value"),
         };
 
+
         match exprs.len() {
             1 => match &exprs[0].kind {
                 ExprKind::Integer(n) => Ok(*n),
@@ -453,6 +454,30 @@ impl CodeGen {
                     Some(n) => Ok(*n as u16),
                     None => Err(format!("Label \"{}\" not found", s)),
                 },
+                ExprKind::Unary(k) => {
+                    if exprs[0].exprs.len() != 1 {
+                        panic!("Parser error put too many values in a Unary()... oops");
+                    }
+            
+                    let val = match exprs[0].exprs[0].kind {
+                        ExprKind::Integer(val) => val,
+                        _ => panic!("Non-integer Expr in Unary... oops"),
+                    };
+                    
+                    match k {
+                        TokenKind::Minus => {
+                            if val > i16::MAX as u16 {return Err(format!("{} cannot fit in a signed word", -1 * val as i32)); }
+                            Ok((-1 * val as i16) as u16)
+                        },
+                        TokenKind::Plus => {
+                            if val > i16::MAX as u16 {
+                                return Err(format!("{} cannot fit in a signed word", val as i32)); 
+                            }
+                            Ok(val)
+                        }
+                        _ => panic!("Parsing error put a non-unary operator in a Unary()... oops"),
+                    }
+                }
                 _ => {
                     panic!("Parser error did not put an immediate or label in expression()... oops")
                 }
@@ -502,7 +527,7 @@ impl CodeGen {
                 for _ in 0..len {
                     self.out.push(fill_value);
                 }
-            },
+            }
             TokenKind::FillTo => {
                 if expr.exprs.len() != 2 {
                     return Err("Wrong number of parameters given to fill".to_owned());

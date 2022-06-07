@@ -17,7 +17,7 @@ pub enum ExprKind {
     String(String),
     Label(String),
     Register(TokenKind), // Registers only
-    // Unary,
+    Unary(TokenKind),    // Unary operators only (+ or -)
     // Binary,
     // Grouping,
     Directive(TokenKind),
@@ -78,7 +78,10 @@ impl Parser {
 
         loop {
             match self.parse_one_statement() {
-                Ok(Some(statement)) => output.push(statement),
+                Ok(Some(statement)) => {
+                    println!("{:?}", statement);
+                    output.push(statement)
+                }
                 Ok(None) => break,
                 Err(e) => return Err(format!("Error on line {}:\n  {}", self.line, e)),
             };
@@ -86,6 +89,7 @@ impl Parser {
 
         Ok(output)
     }
+
     pub fn parse_one_statement(&mut self) -> Result<Option<Expr>, String> {
         if let Some(i) = self.instruction()? {
             Ok(Some(i))
@@ -281,29 +285,67 @@ impl Parser {
         };
 
         match &expr_token.0 {
-            TokenKind::Integer(v) => expr.exprs.push(Expr {
-                kind: ExprKind::Integer(*v),
-                exprs: vec![],
-                line: expr_token.2,
-            }),
-            TokenKind::Label(n) => expr.exprs.push(Expr {
-                kind: ExprKind::Label(n.to_owned()),
-                exprs: vec![],
-                line: expr_token.2,
-            }),
-            TokenKind::Minus
+            TokenKind::Integer(v) => {
+                expr.exprs.push(Expr {
+                    kind: ExprKind::Integer(*v),
+                    exprs: vec![],
+                    line: expr_token.2,
+                });
+
+                self.next();
+            }
+            TokenKind::Label(n) => {
+                expr.exprs.push(Expr {
+                    kind: ExprKind::Label(n.to_owned()),
+                    exprs: vec![],
+                    line: expr_token.2,
+                });
+                self.next();
+            }
+            TokenKind::Minus | TokenKind::Plus => {
+                expr.exprs.push(match self.unary()? {
+                    Some(expr) => expr,
+                    None => panic!("No value after unary operator."),
+                });
+            }
+            _ => return Ok(None),
+        };
+
+        Ok(Some(expr))
+    }
+
+    fn unary(&mut self) -> Result<Option<Expr>, String> {
+        let (operator_token_kind, line) = match self.peek() {
+            Some(t) => (&t.0, t.2),
+            None => return Ok(None),
+        };
+
+        let kind = match operator_token_kind {
+            TokenKind::Plus => ExprKind::Unary(TokenKind::Plus),
+            TokenKind::Minus => ExprKind::Unary(TokenKind::Minus),
             _ => return Ok(None),
         };
 
         self.next();
 
-        Ok(Some(expr))
-    }
+        let value = match self.peek() {
+            Some(Token(TokenKind::Integer(v), _, _)) => *v,
+            Some(_) => return Err("No value found after unary operator".to_owned()),
+            None => return Ok(None),
+        };
 
-    
-    //fn unary(&mut self) -> Result<Option<Expr>, String> {
-        
-    //}
+        self.next();
+
+        Ok(Some(Expr {
+            kind,
+            exprs: vec![Expr {
+                kind: ExprKind::Integer(value),
+                exprs: vec![],
+                line,
+            }],
+            line,
+        }))
+    }
 
     /*
     fn binary(&mut self) -> Result<Option<Expr>, String> {

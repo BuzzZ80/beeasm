@@ -1,5 +1,5 @@
-use std::fmt;
 use std::env;
+use std::fmt;
 
 mod codegen;
 mod fileio;
@@ -15,13 +15,15 @@ struct ErrString(String); // for using ? to print errors
 
 fn main() -> Result<(), ErrString> {
     let args: Vec<_> = env::args().collect();
-    
+
     let in_filename: &str;
     let out_filename: &str;
 
     match args.len() {
         1 => {
-            return Err("Expected input filename and optional output filename".to_owned().into());
+            return Err("Expected input filename and optional output filename"
+                .to_owned()
+                .into());
         }
         2 => {
             println!("Assuming out.bin for output file");
@@ -33,7 +35,11 @@ fn main() -> Result<(), ErrString> {
             out_filename = &args[2];
         }
         _ => {
-            return Err("Too many command line arguments provided. See README for correct usage".to_owned().into());
+            return Err(
+                "Too many command line arguments provided. See README for correct usage"
+                    .to_owned()
+                    .into(),
+            );
         }
     }
 
