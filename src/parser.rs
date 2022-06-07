@@ -78,10 +78,7 @@ impl Parser {
 
         loop {
             match self.parse_one_statement() {
-                Ok(Some(statement)) => {
-                    println!("{:?}", statement);
-                    output.push(statement)
-                }
+                Ok(Some(statement)) => output.push(statement),
                 Ok(None) => break,
                 Err(e) => return Err(format!("Error on line {}:\n  {}", self.line, e)),
             };

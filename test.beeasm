@@ -1,2 +1,2 @@
 .org 0x6000
-LDR +0xffff -> G0
+ADD 0xFFFF -> G0
