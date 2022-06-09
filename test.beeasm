@@ -1,2 +1,5 @@
 .org 0x6000
-ADD 0xFFFF -> G0
+.db "u"
+.strz "wu"
+label:
+ jmp label

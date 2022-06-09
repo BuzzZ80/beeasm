@@ -174,7 +174,19 @@ impl CodeGen {
 
                 Ok(0)
             }
-            TokenKind::Db => todo!(),
+            TokenKind::Db => {
+                let mut len = 0;
+
+                for expr in &expr.exprs {
+                    match &expr.kind {
+                        ExprKind::Expression => len += 1,
+                        ExprKind::String(s) => len += s.len(),
+                        _ => return Err(format!("{} is not an expression or string", expr)),
+                    }
+                }
+
+                Ok(len)
+            }
             TokenKind::Fill => {
                 if expr.exprs.len() != 2 {
                     return Err("Wrong number of parameters given to fill".to_owned());
@@ -193,7 +205,19 @@ impl CodeGen {
 
                 Ok(until_addr - self.out.len())
             }
-            TokenKind::Strz => todo!(),
+            TokenKind::Strz => {
+                let mut len = 0;
+
+                for expr in &expr.exprs {
+                    match &expr.kind {
+                        ExprKind::Expression => len += 1,
+                        ExprKind::String(s) => len += s.len(),
+                        _ => return Err(format!("{} is not an expression or string", expr)),
+                    }
+                }
+
+                Ok(len + 1)
+            },
             _ => panic!("Parser error put non-directive in directive expr... oops"),
         }
     }
@@ -446,7 +470,6 @@ impl CodeGen {
             _ => panic!("Codegen error, expression() was called on a non-expression value"),
         };
 
-
         match exprs.len() {
             1 => match &exprs[0].kind {
                 ExprKind::Integer(n) => Ok(*n),
@@ -458,20 +481,25 @@ impl CodeGen {
                     if exprs[0].exprs.len() != 1 {
                         panic!("Parser error put too many values in a Unary()... oops");
                     }
-            
+
                     let val = match exprs[0].exprs[0].kind {
                         ExprKind::Integer(val) => val,
                         _ => panic!("Non-integer Expr in Unary... oops"),
                     };
-                    
+
                     match k {
                         TokenKind::Minus => {
-                            if val > i16::MAX as u16 {return Err(format!("{} cannot fit in a signed word", -1 * val as i32)); }
+                            if val > i16::MAX as u16 {
+                                return Err(format!(
+                                    "{} cannot fit in a signed word",
+                                    -1 * val as i32
+                                ));
+                            }
                             Ok((-1 * val as i16) as u16)
-                        },
+                        }
                         TokenKind::Plus => {
                             if val > i16::MAX as u16 {
-                                return Err(format!("{} cannot fit in a signed word", val as i32)); 
+                                return Err(format!("{} cannot fit in a signed word", val as i32));
                             }
                             Ok(val)
                         }
@@ -509,7 +537,22 @@ impl CodeGen {
 
                 return Ok(Some(()));
             }
-            TokenKind::Db => todo!(),
+            TokenKind::Db => {
+                for expr in &expr.exprs {
+                    match &expr.kind {
+                        ExprKind::Expression => {
+                            self.out
+                                .extend_from_slice(&self.expression(expr)?.to_le_bytes());
+                        }
+                        ExprKind::String(s) => {
+                            for c in s.chars() {
+                                self.out.push(c as u8);
+                            }
+                        }
+                        _ => return Err(format!("{} is not an expression or string", expr)),
+                    }
+                }
+            }
             TokenKind::Fill => {
                 if expr.exprs.len() != 2 {
                     return Err("Wrong number of parameters given to fillto".to_owned());
@@ -546,7 +589,23 @@ impl CodeGen {
                     self.out.push(fill_value);
                 }
             }
-            TokenKind::Strz => todo!(),
+            TokenKind::Strz => {
+                for expr in &expr.exprs {
+                    match &expr.kind {
+                        ExprKind::Expression => {
+                            self.out
+                                .extend_from_slice(&self.expression(expr)?.to_le_bytes());
+                        }
+                        ExprKind::String(s) => {
+                            for c in s.chars() {
+                                self.out.push(c as u8);
+                            }
+                        }
+                        _ => return Err(format!("{} is not an expression or string", expr)),
+                    }
+                }
+                self.out.push(0u8);
+            }
             _ => panic!("Parser error put non-directive in directive expr... oops"),
         };
 

@@ -64,7 +64,7 @@ impl Parser {
      *[X] instruction = op | op "?" CONDITION
      *[X] op          = OPCODE | OPCODE (REGISTER | expression) | OPCODE (REGISTER | expression) "->" (REGISTER | expression)
      *[/] expression  = INTEGER | LABEL | unary | binary | grouping
-     *[ ] unary       = OPERATOR_UNARY expression
+     *[X] unary       = OPERATOR_UNARY expression
      *[ ] binary      = expression OPERATOR_BINARY expression
      *[ ] grouping    = "(" expression ")"
      *
