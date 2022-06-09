@@ -188,8 +188,8 @@ impl CodeGen {
                 Ok(len)
             }
             TokenKind::Fill => {
-                if expr.exprs.len() != 2 {
-                    return Err("Wrong number of parameters given to fill".to_owned());
+                if expr.exprs.len() != 1 && expr.exprs.len() != 2 {
+                    return Err("Wrong number of parameters given to fillto".to_owned());
                 }
 
                 let len = self.expression(&expr.exprs[0])? as usize;
@@ -197,7 +197,7 @@ impl CodeGen {
                 Ok(len)
             }
             TokenKind::FillTo => {
-                if expr.exprs.len() != 2 {
+                if expr.exprs.len() != 1 && expr.exprs.len() != 2 {
                     return Err("Wrong number of parameters given to fillto".to_owned());
                 }
 
@@ -554,12 +554,16 @@ impl CodeGen {
                 }
             }
             TokenKind::Fill => {
-                if expr.exprs.len() != 2 {
+                if expr.exprs.len() != 1 && expr.exprs.len() != 2 {
                     return Err("Wrong number of parameters given to fillto".to_owned());
                 }
 
                 let len = self.expression(&expr.exprs[0])? as usize;
-                let fill_value = self.expression(&expr.exprs[1])?;
+                let fill_value = match expr.exprs.len() {
+                    1 => 0x00,
+                    2 => self.expression(&expr.exprs[1])?,
+                    _ => panic!("impossible state reached in Fill directive.. oops"),
+                };
 
                 if fill_value > u8::MAX as u16 {
                     return Err(format!("{:0>4X} is not a byte value", fill_value));
@@ -572,12 +576,16 @@ impl CodeGen {
                 }
             }
             TokenKind::FillTo => {
-                if expr.exprs.len() != 2 {
-                    return Err("Wrong number of parameters given to fill".to_owned());
+                if expr.exprs.len() != 1 && expr.exprs.len() != 2 {
+                    return Err("Wrong number of parameters given to fillto".to_owned());
                 }
 
                 let until_addr = self.expression(&expr.exprs[0])? as usize;
-                let fill_value = self.expression(&expr.exprs[1])?;
+                let fill_value = match expr.exprs.len() {
+                    1 => 0x00,
+                    2 => self.expression(&expr.exprs[1])?,
+                    _ => panic!("impossible state reached in Fill directive.. oops"),
+                };
 
                 if fill_value > u8::MAX as u16 || fill_value < u8::MIN as u16 {
                     return Err(format!("{:0>4X} is not a byte value", fill_value));

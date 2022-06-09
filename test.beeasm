@@ -1,5 +1,5 @@
-.org 0x6000
-.db "u"
-.strz "wu"
+.fill 4
+.db "hello" 0x2020
+.strz "world"
 label:
- jmp label
+ jmp label ;yes
