@@ -14,6 +14,7 @@ pub enum ExprKind {
     Op(TokenKind),          // Operations only
     Expression,
     Integer(u16),
+    Byte(u8),
     String(String),
     Label(String),
     Register(TokenKind), // Registers only
@@ -68,7 +69,7 @@ impl Parser {
      *[ ] binary      = expression OPERATOR_BINARY expression
      *[ ] grouping    = "(" expression ")"
      *
-     *[X] directive   = DIRECTIVE (expression | STRING)*
+     *[X] directive   = DIRECTIVE (expression | BYTE | STRING)*
      *
      *[X] label       = LABEL ":"
      */
@@ -384,6 +385,14 @@ impl Parser {
             };
 
             match self.peek() {
+                Some(Token(TokenKind::Byte(n), _, line)) => {
+                    directive.exprs.push(Expr {
+                        kind: ExprKind::Byte(*n),
+                        exprs: vec![],
+                        line: *line,
+                    });
+                    self.next();
+                }
                 Some(Token(TokenKind::String(s), _, line)) => {
                     directive.exprs.push(Expr {
                         kind: ExprKind::String(s.to_owned()),
