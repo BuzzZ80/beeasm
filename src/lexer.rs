@@ -4,7 +4,6 @@ use std::fmt;
 pub enum TokenKind {
     // Literals
     Integer(u16),
-    Byte(u8),
     String(String),
     Label(String),
 
@@ -162,31 +161,6 @@ fn tokenize_number(data: &str) -> Result<Token, String> {
     Ok(Token(TokenKind::Integer(num), bytes_read, 0))
 }
 
-fn tokenize_byte(data: &str) -> Result<Token, String> {
-    let (read, bytes_read) = take_while(data, |c| !c.is_whitespace())?;
-
-    let result_num = if read.len() > 3 {
-        match &read[1..2] {
-            "$" => u8::from_str_radix(&read[2..], 16),
-            "%" => u8::from_str_radix(&read[2..], 2),
-            _ => match &read[1..3] {
-                "0x" => u8::from_str_radix(&read[3..], 16),
-                "0b" => u8::from_str_radix(&read[3..], 2),
-                _ => read[1..].parse::<u8>(),
-            },
-        }
-    } else {
-        read[1..].parse::<u8>()
-    };
-
-    let num = match result_num {
-        Ok(n) => n,
-        Err(_) => return Err(format!("Could not parse byte: '{}'", read)),
-    };
-
-    Ok(Token(TokenKind::Byte(num), bytes_read, 0))
-}
-
 /// Returns a String from the 2nd char of data to the next ", will break if there's no "
 fn tokenize_string_literal(data: &str) -> Result<Token, String> {
     let mut final_string = String::new();
@@ -323,7 +297,6 @@ pub fn tokenize_one_token(data: &str) -> Result<Token, String> {
         '(' => Token(TokenKind::OpenParen, 1, 0),
         ')' => Token(TokenKind::CloseParen, 1, 0),
         '.' => tokenize_directive(data)?,
-        '#' => tokenize_byte(data)?,
         '0'..='9' | '$' | '%' => tokenize_number(data)?,
         '"' => tokenize_string_literal(data)?,
         c @ '_' | c if c.is_alphanumeric() => tokenize_identifier(data)?,
