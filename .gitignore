@@ -1,4 +1,4 @@
 /target
 /flamegraph.svg
-/test.beeasm
+/*.beeasm
 /out.bin
