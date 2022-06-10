@@ -1,4 +1,13 @@
-.strz "owo" #0x0A
-.db 0xFF
-label:
-jmp label
+before:
+    MOV G0 -> G0
+after:
+    MOV G0 -> G0
+before_org:
+.org 0x20
+after_org:
+    exit
+
+jmp before
+jmp after
+jmp before_org
+jmp after_org

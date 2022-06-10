@@ -58,6 +58,7 @@ impl CodeGen {
     /// Calculates all labels in a CodeGen instance, then resets it to be used by assebmly instructions.
     /// Consumes all Label Exprs.
     fn get_labels(&mut self) -> Result<(), String> {
+        let mut cum_pos = 0;
         // Loop through all labels:
         while let Some((label, pos)) = self.get_next_label()? {
             // Make sure label doesn't already exist elsewhere to prevent confusion or user error
@@ -65,8 +66,15 @@ impl CodeGen {
                 return Err(format!(r#"Duplicate label "{}" found"#, label));
             };
 
+            if self.org_change {
+                self.org_change = false;
+                cum_pos = 0;
+            }
+
+            cum_pos += pos;
+
             // Inserts label from get_next_label() at the labels position from the base plus the base
-            self.labels.insert(label, pos + self.org);
+            self.labels.insert(label, cum_pos + self.org);
         }
 
         // Reset the codegen struct so that it can be used by assembly instructions
@@ -102,7 +110,6 @@ impl CodeGen {
             };
 
             if self.org_change {
-                self.org_change = false;
                 relative_pos = 0;
             }
 

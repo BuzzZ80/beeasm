@@ -1,2 +1,4 @@
 /target
 /flamegraph.svg
+/test.basm
+/out.bin
