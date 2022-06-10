@@ -1,5 +1,2 @@
-.fill 4
-.db "hello" 0x2020
-.strz "world"
-label:
- jmp label ;yes
+PUSH G1
+POP G1

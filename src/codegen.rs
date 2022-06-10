@@ -409,7 +409,12 @@ impl CodeGen {
         opcode |= match params.len() {
             0 => 0,
             1 => match &params[0] {
-                ('r', n) => *n << 3,
+                ('r', n) => {
+                    match op_kind {
+                        TokenKind::Push => *n,
+                        _ => *n << 3
+                    }
+                },
                 ('i', _) => 0,
                 _ => panic!("Codegen error, param is not int or reg... oops"),
             },
