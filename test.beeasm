@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 .strz "owo" #0x0A
 .db 0xFF
 label:
 jmp label
+=======
+.db "hello\c"
+>>>>>>> master

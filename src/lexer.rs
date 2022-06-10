@@ -189,9 +189,40 @@ fn tokenize_byte(data: &str) -> Result<Token, String> {
 
 /// Returns a String from the 2nd char of data to the next ", will break if there's no "
 fn tokenize_string_literal(data: &str) -> Result<Token, String> {
-    let (read, bytes_read) = take_while(&data[1..], |c| c != '"')?;
+    let mut final_string = String::new();
+    let mut bytes_read = 0;
 
-    Ok(Token(TokenKind::String(read.to_owned()), bytes_read + 2, 0))
+    let mut chars = data.chars();
+    chars.next();
+
+    loop {
+        let next = match chars.next() {
+            Some('"') => break,
+            Some('\\') => {
+                bytes_read += 1;
+                match chars.next() {
+                    Some('n') => 0x0A as char,
+                    Some('c') => 0x0B as char,
+                    Some('\\') => '\\',
+                    Some('\"') => '"',
+                    Some(c) => return Err(format!("{} not a valid escape character", c)),
+                    None => return Err("Reached EOF before finding a \"".to_owned()),
+                }
+            }
+            Some(c) => c,
+            None => return Err("Reached EOF before finding a \"".to_owned()),
+        };
+
+        bytes_read += next.len_utf8();
+
+        final_string.push(next);
+    }
+
+    if bytes_read == 0 {
+        return Err("No matches".to_owned())
+    }
+
+    Ok(Token(TokenKind::String(final_string), bytes_read + 2, 0))
 }
 
 /// Returns a keyword or label from the start of data
