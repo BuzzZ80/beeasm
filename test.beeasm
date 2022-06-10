@@ -1,2 +1,1 @@
-PUSH G1
-POP G1
+.db "hello\c"
