@@ -1,13 +1,12 @@
 before:
-    MOV G0 -> G0
+    .db 0xae52
 after:
-    MOV G0 -> G0
-before_org:
-.org 0x20
-after_org:
+    .db 0x52ae
+
+main:
     exit
 
-jmp before
-jmp after
-jmp before_org
-jmp after_org
+.fillto 0x0FFA
+.db 0x0     ; Flags
+.db main    ; Entry point
+.db 0x1     ; Num sectors
