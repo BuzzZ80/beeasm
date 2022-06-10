@@ -1,1 +1,4 @@
-.fill 4 #0xFF
+.strz "owo" #0x0A
+.db 0xFF
+label:
+jmp label

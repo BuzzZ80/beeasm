@@ -179,9 +179,10 @@ impl CodeGen {
 
                 for expr in &expr.exprs {
                     match &expr.kind {
-                        ExprKind::Expression => len += 1,
+                        ExprKind::Expression => len += 2,
                         ExprKind::String(s) => len += s.len(),
-                        _ => return Err(format!("{} is not an expression or string", expr)),
+                        ExprKind::Byte(_) => len += 1,
+                        _ => return Err(format!("{} is not an expression, byte, or string", expr)),
                     }
                 }
 
@@ -210,9 +211,10 @@ impl CodeGen {
 
                 for expr in &expr.exprs {
                     match &expr.kind {
-                        ExprKind::Expression => len += 1,
+                        ExprKind::Expression => len += 2,
                         ExprKind::String(s) => len += s.len(),
-                        _ => return Err(format!("{} is not an expression or string", expr)),
+                        ExprKind::Byte(_) => len += 1,
+                        _ => return Err(format!("{} is not an expression, byte, or string", expr)),
                     }
                 }
 
@@ -549,7 +551,10 @@ impl CodeGen {
                                 self.out.push(c as u8);
                             }
                         }
-                        _ => return Err(format!("{} is not an expression or string", expr)),
+                        ExprKind::Byte(n) => {
+                            self.out.extend_from_slice(&n.to_le_bytes());
+                        }
+                        _ => return Err(format!("{} is not an expression, byte, or string", expr)),
                     }
                 }
             }
@@ -623,7 +628,10 @@ impl CodeGen {
                                 self.out.push(c as u8);
                             }
                         }
-                        _ => return Err(format!("{} is not an expression or string", expr)),
+                        ExprKind::Byte(n) => {
+                            self.out.extend_from_slice(&n.to_le_bytes());
+                        }
+                        _ => return Err(format!("{} is not an expression, byte, or string", expr)),
                     }
                 }
                 self.out.push(0u8);
