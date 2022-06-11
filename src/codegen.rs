@@ -353,6 +353,7 @@ impl CodeGen {
                         TokenKind::Not => 0x1F,
                         TokenKind::Push => 0x24,
                         TokenKind::Pop => 0x26,
+                        TokenKind::Clc => 0x2C,
                         _ => {
                             return Err("This operation does not take a single register argument"
                                 .to_owned())
