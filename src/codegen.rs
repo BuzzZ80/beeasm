@@ -227,6 +227,34 @@ impl CodeGen {
 
                 Ok(len + 1)
             }
+            TokenKind::Def => {
+                let exprs = &expr.exprs;
+                if exprs.len() != 2 {
+                    return Err(".def takes an identifier and a 16-bit integer".to_owned());
+                };
+
+                self.index += 1;
+
+                let label = match &exprs[0].kind {
+                    ExprKind::Expression => match &exprs[0].exprs.get(0) {
+                        Some(expr) => match &expr.kind {
+                            ExprKind::Label(s) => s.to_owned(),
+                            _ => return Err(format!("Expected identifier, found {:?}", &exprs[0].exprs[0])),
+                        }
+                        None => panic!("Parser error generated empty expression... oops"),
+                    }
+                    _ => return Err(format!("Expected identifier, found {:?}", &expr.kind))
+                };
+
+                let value = match &exprs[1].kind {
+                    ExprKind::Expression => self.expression(&exprs[1])? as usize,
+                    _ => return Err(format!("Expected 16-bit integer, found {}", &exprs[1]))
+                };
+                
+                self.labels.insert(label, value);
+
+                Ok(0)
+            }
             _ => panic!("Parser error put non-directive in directive expr... oops"),
         }
     }
@@ -648,6 +676,7 @@ impl CodeGen {
                 }
                 self.out.push(0u8);
             }
+            TokenKind::Def => {}
             _ => panic!("Parser error put non-directive in directive expr... oops"),
         };
 
