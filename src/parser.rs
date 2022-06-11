@@ -366,7 +366,8 @@ impl Parser {
             | TokenKind::Db
             | TokenKind::Fill
             | TokenKind::Strz
-            | TokenKind::FillTo => &directive_token.0,
+            | TokenKind::FillTo
+            | TokenKind::Def => &directive_token.0,
             _ => return Ok(None),
         };
 
