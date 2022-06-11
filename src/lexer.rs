@@ -162,6 +162,45 @@ fn tokenize_number(data: &str) -> Result<Token, String> {
     Ok(Token(TokenKind::Integer(num), bytes_read, 0))
 }
 
+fn tokenize_char(data: &str) -> Result<Token, String> {
+    let final_char;
+    let mut bytes_read = 0;
+
+    let mut chars = data.chars();
+    chars.next();
+
+    let next = match chars.next() {
+        Some('\'') => return Err("No char found between 's".to_owned()),
+        Some('\\') => {
+            bytes_read += 1;
+            match chars.next() {
+                Some('n') => 0x0A as char,
+                Some('c') => 0x0B as char,
+                Some('\\') => '\\',
+                Some('\'') => '\'',
+                Some(c) => return Err(format!("{} not a valid escape character", c)),
+                None => return Err("Reached EOF before finding a \"".to_owned()),
+            }
+        }
+        Some(c) => c,
+        None => return Err("Unexpected EOF after '".to_owned()),
+    };
+
+    if chars.next() != Some('\'') {
+        return Err("Too many chars in between 's".to_owned());
+    }
+
+    bytes_read += next.len_utf8();
+
+    final_char = next;
+
+    if bytes_read == 0 {
+        return Err("No matches".to_owned())
+    }
+
+    Ok(Token(TokenKind::Integer(final_char as u16), bytes_read + 2, 0))
+}
+
 fn tokenize_byte(data: &str) -> Result<Token, String> {
     let (read, bytes_read) = take_while(data, |c| !c.is_whitespace())?;
 
@@ -325,6 +364,7 @@ pub fn tokenize_one_token(data: &str) -> Result<Token, String> {
         '.' => tokenize_directive(data)?,
         '#' => tokenize_byte(data)?,
         '0'..='9' | '$' | '%' => tokenize_number(data)?,
+        '\'' => tokenize_char(data)?,
         '"' => tokenize_string_literal(data)?,
         c @ '_' | c if c.is_alphanumeric() => tokenize_identifier(data)?,
         c => return Err(format!("Unexpected character {}", c)),
