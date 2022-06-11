@@ -80,6 +80,7 @@ pub enum TokenKind {
     Fill,
     FillTo,
     Strz,
+    Def,
     //Other
     None,
 }
@@ -335,6 +336,7 @@ fn tokenize_directive(data: &str) -> Result<Token, String> {
         ".fill" => TokenKind::Fill,
         ".fillto" => TokenKind::FillTo,
         ".strz" => TokenKind::Strz,
+        ".def" => TokenKind::Def,
         s => return Err(format!("Unknown dot directive '{}'.", s)),
     };
 
