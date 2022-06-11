@@ -191,6 +191,7 @@ impl Parser {
             | TokenKind::Adc
             | TokenKind::Sbc
             | TokenKind::Popx
+            | TokenKind::Clc
             | TokenKind::Jmp
             | TokenKind::Jsr
             | TokenKind::Rts
