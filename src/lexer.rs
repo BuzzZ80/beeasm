@@ -74,6 +74,10 @@ pub enum TokenKind {
     Lte,
     Cr,
     Ncr,
+    In,
+    Nin,
+    Ir,
+    Nir,
 
     // Assembler directives
     Org,
@@ -322,6 +326,10 @@ fn tokenize_identifier(data: &str) -> Result<Token, String> {
         "gte" => TokenKind::Gte,
         "cr" | "br" => TokenKind::Cr,
         "ncr" | "nbr" => TokenKind::Ncr,
+        "in" => TokenKind::In,
+        "nin" => TokenKind::Nin,
+        "ir" => TokenKind::Ir,
+        "nir" => TokenKind::Nir,
         s => TokenKind::Label(s.to_owned()),
     };
 
