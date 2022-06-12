@@ -434,7 +434,7 @@ impl Parser {
 
         match &colon_token.0 {
             TokenKind::Colon => (),
-            _ => return Err("No ':' after label".to_owned()),
+            _ => return Err(format!("Unknown label {:?}", kind)),
         };
 
         self.next();
