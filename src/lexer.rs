@@ -201,10 +201,14 @@ fn tokenize_char(data: &str) -> Result<Token, String> {
     final_char = next;
 
     if bytes_read == 0 {
-        return Err("No matches".to_owned())
+        return Err("No matches".to_owned());
     }
 
-    Ok(Token(TokenKind::Integer(final_char as u16), bytes_read + 2, 0))
+    Ok(Token(
+        TokenKind::Integer(final_char as u16),
+        bytes_read + 2,
+        0,
+    ))
 }
 
 fn tokenize_byte(data: &str) -> Result<Token, String> {
@@ -264,7 +268,7 @@ fn tokenize_string_literal(data: &str) -> Result<Token, String> {
     }
 
     if bytes_read == 0 {
-        return Err("No matches".to_owned())
+        return Err("No matches".to_owned());
     }
 
     Ok(Token(TokenKind::String(final_string), bytes_read + 2, 0))

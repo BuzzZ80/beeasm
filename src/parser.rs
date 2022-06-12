@@ -147,7 +147,7 @@ impl Parser {
             | TokenKind::Gt
             | TokenKind::Lte
             | TokenKind::Cr
-            | TokenKind::Ncr 
+            | TokenKind::Ncr
             | TokenKind::In
             | TokenKind::Nin
             | TokenKind::Ir

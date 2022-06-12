@@ -239,22 +239,27 @@ impl CodeGen {
                     ExprKind::Expression => match &exprs[0].exprs.get(0) {
                         Some(expr) => match &expr.kind {
                             ExprKind::Label(s) => s.to_owned(),
-                            _ => return Err(format!("Expected identifier, found {:?}", &exprs[0].exprs[0])),
-                        }
+                            _ => {
+                                return Err(format!(
+                                    "Expected identifier, found {:?}",
+                                    &exprs[0].exprs[0]
+                                ))
+                            }
+                        },
                         None => panic!("Parser error generated empty expression... oops"),
-                    }
-                    _ => return Err(format!("Expected identifier, found {:?}", &expr.kind))
+                    },
+                    _ => return Err(format!("Expected identifier, found {:?}", &expr.kind)),
                 };
 
                 let value = match &exprs[1].kind {
                     ExprKind::Expression => self.expression(&exprs[1])? as usize,
-                    _ => return Err(format!("Expected 16-bit integer, found {}", &exprs[1]))
+                    _ => return Err(format!("Expected 16-bit integer, found {}", &exprs[1])),
                 };
 
                 if self.labels.get(&label).is_some() {
                     return Err(format!(r#"Duplicate label/identifier "{}" found"#, label));
                 };
-                
+
                 self.labels.insert(label, value);
 
                 Ok(0)
@@ -455,11 +460,9 @@ impl CodeGen {
         opcode |= match params.len() {
             0 => 0,
             1 => match &params[0] {
-                ('r', n) => {
-                    match op_kind {
-                        TokenKind::Push => *n,
-                        _ => *n << 3
-                    }
+                ('r', n) => match op_kind {
+                    TokenKind::Push => *n,
+                    _ => *n << 3,
                 },
                 ('i', _) => 0,
                 _ => panic!("Codegen error, param is not int or reg... oops"),
