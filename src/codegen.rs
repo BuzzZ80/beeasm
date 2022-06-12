@@ -546,10 +546,10 @@ impl CodeGen {
                             if val > i16::MAX as u16 {
                                 return Err(format!(
                                     "{} cannot fit in a signed word",
-                                    -1 * val as i32
+                                    -(val as i32)
                                 ));
                             }
-                            Ok((-1 * val as i16) as u16)
+                            Ok(-(val as i16) as u16)
                         }
                         TokenKind::Plus => {
                             if val > i16::MAX as u16 {

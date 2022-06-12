@@ -169,7 +169,6 @@ fn tokenize_number(data: &str) -> Result<Token, String> {
 }
 
 fn tokenize_char(data: &str) -> Result<Token, String> {
-    let final_char;
     let mut bytes_read = 0;
 
     let mut chars = data.chars();
@@ -198,14 +197,12 @@ fn tokenize_char(data: &str) -> Result<Token, String> {
 
     bytes_read += next.len_utf8();
 
-    final_char = next;
-
     if bytes_read == 0 {
         return Err("No matches".to_owned());
     }
 
     Ok(Token(
-        TokenKind::Integer(final_char as u16),
+        TokenKind::Integer(next as u16),
         bytes_read + 2,
         0,
     ))
