@@ -301,6 +301,10 @@ impl CodeGen {
             TokenKind::Gt => 0b01111,
             TokenKind::Cr => 0b1001,
             TokenKind::Ncr => 0b1001,
+            TokenKind::In => 0b1011,
+            TokenKind::Nin => 0b1010,
+            TokenKind::Ir => 0b1101,
+            TokenKind::Nir => 0b1100,
             _ => panic!("Parsing error put an invalid condition in an instruction... oops"),
         };
 
