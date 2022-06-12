@@ -250,6 +250,10 @@ impl CodeGen {
                     ExprKind::Expression => self.expression(&exprs[1])? as usize,
                     _ => return Err(format!("Expected 16-bit integer, found {}", &exprs[1]))
                 };
+
+                if self.labels.get(&label).is_some() {
+                    return Err(format!(r#"Duplicate label/identifier "{}" found"#, label));
+                };
                 
                 self.labels.insert(label, value);
 
