@@ -147,7 +147,11 @@ impl Parser {
             | TokenKind::Gt
             | TokenKind::Lte
             | TokenKind::Cr
-            | TokenKind::Ncr => instruction.kind = ExprKind::Instruction(peek.0.to_owned()),
+            | TokenKind::Ncr 
+            | TokenKind::In
+            | TokenKind::Nin
+            | TokenKind::Ir
+            | TokenKind::Nir => instruction.kind = ExprKind::Instruction(peek.0.to_owned()),
             _ => return Err("No condition after '?'".to_owned()),
         };
 
