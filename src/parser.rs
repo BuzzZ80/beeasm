@@ -172,6 +172,8 @@ impl Parser {
             | TokenKind::Sub
             | TokenKind::Mul
             | TokenKind::Div
+            | TokenKind::Scp
+            | TokenKind::Ccp
             | TokenKind::Mov
             | TokenKind::Inc
             | TokenKind::Dec
@@ -196,6 +198,9 @@ impl Parser {
             | TokenKind::Sbc
             | TokenKind::Popx
             | TokenKind::Clc
+            | TokenKind::Scb
+            | TokenKind::Ccb
+            | TokenKind::Clcr
             | TokenKind::Jmp
             | TokenKind::Jsr
             | TokenKind::Rts
