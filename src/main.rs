@@ -47,9 +47,9 @@ fn main() -> Result<(), ErrString> {
 
     let program = fileio::read_to_string(in_filename)?;
 
-    let processed = Preprocessor::new(&program).process();
+    let program = Preprocessor::new(program).process();
 
-    let tokens = Lexer::new(&processed).tokenize()?;
+    let tokens = Lexer::new(&program).tokenize()?;
 
     let statements = Parser::new(tokens).parse()?;
 
