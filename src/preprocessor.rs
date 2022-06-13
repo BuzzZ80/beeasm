@@ -11,7 +11,7 @@ enum ReadingStatus {
     PassThrough,
     IgnoreDirectives(char),
     GetDirective,
-    GetFilename,
+    GetFilename(usize),
 }
 
 impl Preprocessor {
@@ -58,14 +58,21 @@ impl Preprocessor {
                     match c {
                         _ if c.is_whitespace() => {
                             match self.current_directive.to_lowercase().as_str() {
-                                "include" => status = ReadingStatus::GetFilename,
+                                "include" => status = ReadingStatus::GetFilename(0),
                                 _ => return Err(format!("Unknown preprocessor directive \"{}\"", self.current_directive)),
                             }
                         }
                         _ => self.current_directive.push(c),
                     }
                 }
-                ReadingStatus::GetFilename => {
+                ReadingStatus::GetFilename(0) => {
+                    match c {
+                        '<' => {},
+                        c if c.is_whitespace() => {}
+                        c => return Err(format!("Expected opening bracket '<' for file name. Found '{}'", c)),
+                    }
+                }
+                ReadingStatus::GetFilename(_) => {
                     match c {
                         '>' => {
                             if !matches!(&self.current_filename[..1], "<") {
