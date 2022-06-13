@@ -1,15 +1,17 @@
 use std::env;
 use std::fmt;
 
-mod codegen;
 mod fileio;
+mod preprocessor;
 mod lexer;
 mod parser;
+mod codegen;
 
-use codegen::*;
 use fileio::*;
+use preprocessor::*;
 use lexer::*;
 use parser::*;
+use codegen::*;
 
 struct ErrString(String); // for using ? to print errors
 
