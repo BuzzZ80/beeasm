@@ -1,13 +1,15 @@
 pub struct Preprocessor {
     main: String,
     out: String,
-    tmp_filename: String,
+    current_directive: String,
+    current_filename: String,
 }
 
 enum ReadingStatus {
     PassThrough,
-    IgnoreDirectives,
+    IgnoreDirectives(char),
     GetDirective,
+    GetFilename,
 }
 
 impl Preprocessor {
@@ -15,39 +17,72 @@ impl Preprocessor {
         Self {
             main,
             out: String::new(),
-            tmp_filename: String::new(),
+            current_directive: String::new(),
+            current_filename: String::new(),
         }
     }
 
-    pub fn process(&mut self) -> String {
+    // super::fileio::read_to_string(self.current_filename.as_str())?.as_str(),
+
+    pub fn process(&mut self) -> Result<String, String> {
         let mut status = ReadingStatus::PassThrough;
         for c in self.main.chars() {
-            match c {
-                '"' if matches!(status, ReadingStatus::PassThrough) => {
+            match status {
+                // Ignore directives within string literals or comments
+                ReadingStatus::PassThrough => match c {
+                    '"' => {
+                        self.out.push(c);
+                        status = ReadingStatus::IgnoreDirectives('"');
+                    }
+                    ';' => {
+                        self.out.push(c);
+                        status = ReadingStatus::IgnoreDirectives('\n');
+                    },
+                    '#' => {
+                        status = ReadingStatus::GetDirective;
+                    }
+                    _ => self.out.push(c),
+                }
+                // Exit ignoring status once the char in the tuple is reached
+                ReadingStatus::IgnoreDirectives(until) => {
                     self.out.push(c);
-                    status = ReadingStatus::IgnoreDirectives;
+                    if until == c {
+                        status = ReadingStatus::PassThrough;
+                    }
                 }
-                '"' if matches!(status, ReadingStatus::IgnoreDirectives) => {
-                    self.out.push(c);
-                    status = ReadingStatus::PassThrough;
+                ReadingStatus::GetDirective => {
+                    match c {
+                        ' ' => {
+                            match self.current_directive.to_lowercase().as_str() {
+                                "include" => status = ReadingStatus::GetFilename,
+                                _ => return Err(format!("Unknown preprocessor directive {}", self.current_directive)),
+                            }
+                            self.current_directive.clear();
+                        }
+                        _ => self.current_directive.push(c),
+                    }
                 }
-                _ if matches!(status, ReadingStatus::IgnoreDirectives) => {
-                    self.out.push(c);
+                ReadingStatus::GetFilename => {
+                    match c {
+                        '>' => {
+                            if !matches!(&self.current_filename[..1], "<") {
+                                return Err("Incorrect preprocessor format".to_owned());
+                            }
+                            match self.current_directive.as_str() {
+                                "include" => {
+                                    self.out.push('\n')
+                                }
+                                _ => return Err(format!("Unknown preprocessor directive {}", self.current_directive)),
+                            }
+                            self.current_directive.clear();
+                            self.current_filename.clear();
+                        }
+                        _ => self.current_filename.push(c)
+                    }
                 }
-                ' ' if matches!(status, ReadingStatus::GetDirective) => {
-                    status = ReadingStatus::PassThrough;
-                    self.tmp_filename.clear();
-                }
-                c if matches!(status, ReadingStatus::GetDirective) => {
-                    self.tmp_filename.push(c);
-                }
-                '#' => {
-                    status = ReadingStatus::GetDirective;
-                }
-                c => self.out.push(c),
             }
         }
 
-        self.out.to_owned()
+        Ok(self.out.to_owned())
     }
 }

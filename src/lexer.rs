@@ -201,11 +201,7 @@ fn tokenize_char(data: &str) -> Result<Token, String> {
         return Err("No matches".to_owned());
     }
 
-    Ok(Token(
-        TokenKind::Integer(next as u16),
-        bytes_read + 2,
-        0,
-    ))
+    Ok(Token(TokenKind::Integer(next as u16), bytes_read + 2, 0))
 }
 
 fn tokenize_byte(data: &str) -> Result<Token, String> {

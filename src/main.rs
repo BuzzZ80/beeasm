@@ -1,17 +1,17 @@
 use std::env;
 use std::fmt;
 
+mod codegen;
 mod fileio;
-mod preprocessor;
 mod lexer;
 mod parser;
-mod codegen;
+mod preprocessor;
 
+use codegen::*;
 use fileio::*;
-use preprocessor::*;
 use lexer::*;
 use parser::*;
-use codegen::*;
+use preprocessor::*;
 
 struct ErrString(String); // for using ? to print errors
 
@@ -47,7 +47,7 @@ fn main() -> Result<(), ErrString> {
 
     let program = fileio::read_to_string(in_filename)?;
 
-    let program = Preprocessor::new(program).process();
+    let program = Preprocessor::new(program).process()?;
 
     let tokens = Lexer::new(&program).tokenize()?;
 
