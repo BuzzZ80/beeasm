@@ -2,6 +2,11 @@ use super::lexer::TokenKind;
 use super::parser::{Expr, ExprKind};
 use std::collections::HashMap;
 
+const POS_SRC: usize = 0;
+const POS_DEST: usize = 13;
+const POS_OPCODE: usize = 3;
+const POS_CONDITION: usize = 9;
+
 pub struct CodeGen {
     pub out: Vec<u8>,
     labels: HashMap<String, usize>,
@@ -318,7 +323,7 @@ impl CodeGen {
             n => panic!("Codegen error, only {} returned by op()... oops", n.len()),
         };
 
-        data[0] |= cond_binary << 6;
+        data[0] |= cond_binary << POS_CONDITION;
 
         // Append to out
         for i in data {
@@ -456,25 +461,25 @@ impl CodeGen {
             }
         };
 
-        opcode <<= 10;
+        opcode <<= POS_OPCODE;
         opcode |= match params.len() {
             0 => 0,
             1 => match &params[0] {
                 ('r', n) => match op_kind {
-                    TokenKind::Push => *n,
-                    _ => *n << 3,
+                    TokenKind::Push => *n << POS_SRC,
+                    _ => *n << POS_DEST,
                 },
                 ('i', _) => 0,
                 _ => panic!("Codegen error, param is not int or reg... oops"),
             },
             2 => {
                 let p1 = match &params[0] {
-                    ('r', n) => *n,
+                    ('r', n) => *n << POS_SRC,
                     ('i', _) => 0,
                     _ => panic!("Codegen error, param is not int or reg... oops"),
                 };
                 p1 | match &params[1] {
-                    ('r', n) => *n << 3,
+                    ('r', n) => *n << POS_DEST,
                     ('i', _) => 0,
                     _ => panic!("Codegen error, param is not int or reg... oops"),
                 }
