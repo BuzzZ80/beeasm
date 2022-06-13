@@ -25,11 +25,21 @@ impl Preprocessor {
         }
     }
 
-    // super::fileio::read_to_string(self.current_filename.as_str())?.as_str(),
-
     pub fn process(&mut self) -> Result<String, String> {
+        match self.process_no_error_line() {
+            Ok(s) => Ok(s),
+            Err(s) => {
+                Err(format!("Error on line {}:\n  {}", self.line, s))
+            }
+        }
+    }
+
+    fn process_no_error_line(&mut self) -> Result<String, String> {
         let mut status = ReadingStatus::PassThrough;
         for c in self.main.chars() {
+            if c == '\n' {
+                self.line += 1;
+            }
             println!("{:?} : {}", status, c);
             match status {
                 // Ignore directives within string literals or comments
