@@ -357,6 +357,11 @@ impl CodeGen {
 
         let mut opcode = match params.len() {
             0 => match op_kind {
+                TokenKind::Scp => 0x08,
+                TokenKind::Ccp => 0x09,
+                TokenKind::Scb => 0x2D,
+                TokenKind::Ccb => 0x2E,
+                TokenKind::Clcr => 0x2F,
                 TokenKind::Rts => 0x32,
                 TokenKind::Exit => 0x3F,
                 _ => return Err("Not enough parameters supplied".to_owned()),
