@@ -3,8 +3,10 @@ pub struct Preprocessor {
     out: String,
     current_directive: String,
     current_filename: String,
+    line: usize,
 }
 
+#[derive(Debug)]
 enum ReadingStatus {
     PassThrough,
     IgnoreDirectives(char),
@@ -19,6 +21,7 @@ impl Preprocessor {
             out: String::new(),
             current_directive: String::new(),
             current_filename: String::new(),
+            line: 1,
         }
     }
 
@@ -27,6 +30,7 @@ impl Preprocessor {
     pub fn process(&mut self) -> Result<String, String> {
         let mut status = ReadingStatus::PassThrough;
         for c in self.main.chars() {
+            println!("{:?} : {}", status, c);
             match status {
                 // Ignore directives within string literals or comments
                 ReadingStatus::PassThrough => match c {
@@ -52,12 +56,11 @@ impl Preprocessor {
                 }
                 ReadingStatus::GetDirective => {
                     match c {
-                        ' ' => {
+                        _ if c.is_whitespace() => {
                             match self.current_directive.to_lowercase().as_str() {
                                 "include" => status = ReadingStatus::GetFilename,
-                                _ => return Err(format!("Unknown preprocessor directive {}", self.current_directive)),
+                                _ => return Err(format!("Unknown preprocessor directive \"{}\"", self.current_directive)),
                             }
-                            self.current_directive.clear();
                         }
                         _ => self.current_directive.push(c),
                     }
@@ -70,12 +73,16 @@ impl Preprocessor {
                             }
                             match self.current_directive.as_str() {
                                 "include" => {
-                                    self.out.push('\n')
+                                    self.out.push('\n');
+                                    let sub_program = super::fileio::read_to_string(&self.current_filename[1..])?;
+                                    let mut sub_processor = Preprocessor::new(sub_program);
+                                    self.out.push_str(sub_processor.process()?.as_str());
                                 }
-                                _ => return Err(format!("Unknown preprocessor directive {}", self.current_directive)),
+                                _ => return Err(format!("Unknown preprocessor directive \"{}\"", self.current_directive)),
                             }
                             self.current_directive.clear();
                             self.current_filename.clear();
+                            status = ReadingStatus::PassThrough;
                         }
                         _ => self.current_filename.push(c)
                     }
