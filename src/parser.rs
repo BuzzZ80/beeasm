@@ -12,16 +12,19 @@ pub struct Parser {
 pub enum ExprKind {
     Instruction(TokenKind), // Conditions only
     Op(TokenKind),          // Operations only
-    Expression,
-    Integer(u16),
     Byte(u8),
     String(String),
     Label(String),
-    Register(TokenKind), // Registers only
-    Unary(TokenKind),    // Unary operators only (+ or -)
-    // Binary,
-    // Grouping,
+    Register(TokenKind),    // Registers only
     Directive(TokenKind),
+
+    Expression,
+    Term(TokenKind),        // + or - only
+    Factor(TokenKind),      // * or / only
+    Unary(TokenKind),       // + - or ~ only (once ~ is implemented)
+    Primary,                //
+    Integer(u16),           // 
+    Grouping,
 }
 
 #[derive(Clone)]
