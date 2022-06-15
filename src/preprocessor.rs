@@ -40,7 +40,6 @@ impl Preprocessor {
             if c == '\n' {
                 self.line += 1;
             }
-            println!("{:?} : {}", status, c);
             match status {
                 // Ignore directives within string literals or comments
                 ReadingStatus::PassThrough => match c {
@@ -76,22 +75,20 @@ impl Preprocessor {
                     }
                 }
                 ReadingStatus::GetFilename(0) => {
+                    status = ReadingStatus::GetFilename(1);
                     match c {
                         '<' => {},
                         c if c.is_whitespace() => {}
                         c => return Err(format!("Expected opening bracket '<' for file name. Found '{}'", c)),
                     }
                 }
-                ReadingStatus::GetFilename(_) => {
+                ReadingStatus::GetFilename(n) => {
                     match c {
                         '>' => {
-                            if !matches!(&self.current_filename[..1], "<") {
-                                return Err("Incorrect preprocessor format".to_owned());
-                            }
                             match self.current_directive.as_str() {
                                 "include" => {
                                     self.out.push('\n');
-                                    let sub_program = super::fileio::read_to_string(&self.current_filename[1..])?;
+                                    let sub_program = super::fileio::read_to_string(self.current_filename.as_str())?;
                                     let mut sub_processor = Preprocessor::new(sub_program);
                                     self.out.push_str(sub_processor.process()?.as_str());
                                 }
@@ -100,9 +97,11 @@ impl Preprocessor {
                             self.current_directive.clear();
                             self.current_filename.clear();
                             status = ReadingStatus::PassThrough;
+                            continue;
                         }
                         _ => self.current_filename.push(c)
-                    }
+                    };
+                    status = ReadingStatus::GetFilename(n + 1);
                 }
             }
         }
