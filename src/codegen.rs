@@ -103,6 +103,8 @@ impl CodeGen {
                 None => return Ok(None),
             };
 
+            println!("{:?}", kind);
+
             let len: usize = match kind {
                 ExprKind::Instruction(_) => self.instruction_len()?,
                 ExprKind::Directive(_) => self.directive_len()?,
@@ -238,8 +240,6 @@ impl CodeGen {
                     return Err(".def takes an identifier and a 16-bit integer".to_owned());
                 };
 
-                self.index += 1;
-
                 let label = match &exprs[0].kind {
                     ExprKind::Expression => match &exprs[0].exprs.get(0) {
                         Some(expr) => match &expr.kind {
@@ -275,6 +275,7 @@ impl CodeGen {
 
     /// Takes an Instruction or Directive and modifies self accordingly
     fn assemble_single_expr(&mut self) -> Result<Option<()>, String> {
+        println!("{:?}", self.exprs.get(self.index));
         match self.exprs.get(self.index) {
             Some(expr) => match &expr.kind {
                 ExprKind::Instruction(_) => self.instruction(),
