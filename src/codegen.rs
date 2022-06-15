@@ -362,37 +362,46 @@ impl CodeGen {
                 TokenKind::Clcr => 0x2F,
                 TokenKind::Rts => 0x32,
                 TokenKind::Exit => 0x3F,
-                _ => return Err(format!("Not enough parameters supplied to instruction '{:?}'", op_kind)),
-            },
-            1 => {
-                match params[0].0 {
-                    'r' => match op_kind {
-                        TokenKind::Inc => 0x0C,
-                        TokenKind::Dec => 0x0D,
-                        TokenKind::Ssp => 0x19,
-                        TokenKind::Gsp => 0x1A,
-                        TokenKind::Not => 0x1F,
-                        TokenKind::Push => 0x24,
-                        TokenKind::Pop => 0x26,
-                        TokenKind::Clc => 0x2C,
-                        _ => {
-                            return Err(format!("'{:?}' does not take a single register argument", op_kind))
-                        }
-                    },
-                    'i' => match op_kind {
-                        TokenKind::Ssp => 0x18,
-                        TokenKind::Push => 0x23,
-                        TokenKind::Pshx => 0x25,
-                        TokenKind::Popx => 0x2B,
-                        TokenKind::Jmp => 0x30,
-                        TokenKind::Jsr => 0x31,
-                        _ => {
-                            return Err(format!("'{:?}' does not take a single immediate argument", op_kind))
-                        }
-                    },
-                    _ => panic!("Codegen error, param is not int or reg... oops"),
+                _ => {
+                    return Err(format!(
+                        "Not enough parameters supplied to instruction '{:?}'",
+                        op_kind
+                    ))
                 }
-            }
+            },
+            1 => match params[0].0 {
+                'r' => match op_kind {
+                    TokenKind::Inc => 0x0C,
+                    TokenKind::Dec => 0x0D,
+                    TokenKind::Ssp => 0x19,
+                    TokenKind::Gsp => 0x1A,
+                    TokenKind::Not => 0x1F,
+                    TokenKind::Push => 0x24,
+                    TokenKind::Pop => 0x26,
+                    TokenKind::Clc => 0x2C,
+                    _ => {
+                        return Err(format!(
+                            "'{:?}' does not take a single register argument",
+                            op_kind
+                        ))
+                    }
+                },
+                'i' => match op_kind {
+                    TokenKind::Ssp => 0x18,
+                    TokenKind::Push => 0x23,
+                    TokenKind::Pshx => 0x25,
+                    TokenKind::Popx => 0x2B,
+                    TokenKind::Jmp => 0x30,
+                    TokenKind::Jsr => 0x31,
+                    _ => {
+                        return Err(format!(
+                            "'{:?}' does not take a single immediate argument",
+                            op_kind
+                        ))
+                    }
+                },
+                _ => panic!("Codegen error, param is not int or reg... oops"),
+            },
             2 => match params[0].0 {
                 'r' => match params[1].0 {
                     'r' => match op_kind {
@@ -410,7 +419,10 @@ impl CodeGen {
                         TokenKind::Adc => 0x28,
                         TokenKind::Sbc => 0x2A,
                         _ => {
-                            return Err(format!("'{:?}' does not take two register arguments", op_kind))
+                            return Err(format!(
+                                "'{:?}' does not take two register arguments",
+                                op_kind
+                            ))
                         }
                     },
                     'i' => match op_kind {
@@ -418,7 +430,10 @@ impl CodeGen {
                         TokenKind::Str => 0x11,
                         TokenKind::Stx => 0x13,
                         _ => {
-                            return Err(format!("'{:?}' does not take a register and then an immediate", op_kind))
+                            return Err(format!(
+                                "'{:?}' does not take a register and then an immediate",
+                                op_kind
+                            ))
                         }
                     },
                     _ => panic!("Codegen error, value not a variable or immediate... oops"),
@@ -441,10 +456,18 @@ impl CodeGen {
                         TokenKind::Adc => 0x27,
                         TokenKind::Sbc => 0x29,
                         _ => {
-                            return Err(format!("{:?} does not take an immediate and then a register", op_kind))
+                            return Err(format!(
+                                "{:?} does not take an immediate and then a register",
+                                op_kind
+                            ))
                         }
                     },
-                    'i' => return Err(format!("Two ints provided to '{:?}', which isn't supported", op_kind)),
+                    'i' => {
+                        return Err(format!(
+                            "Two ints provided to '{:?}', which isn't supported",
+                            op_kind
+                        ))
+                    }
                     _ => panic!("Codegen error, param is not int or reg... oops"),
                 },
                 _ => panic!("Codegen error, param is not int or reg... oops"),
