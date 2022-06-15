@@ -362,7 +362,7 @@ impl CodeGen {
                 TokenKind::Clcr => 0x2F,
                 TokenKind::Rts => 0x32,
                 TokenKind::Exit => 0x3F,
-                _ => return Err("Not enough parameters supplied".to_owned()),
+                _ => return Err(format!("Not enough parameters supplied to instruction '{:?}'", op_kind)),
             },
             1 => {
                 match params[0].0 {
@@ -376,8 +376,7 @@ impl CodeGen {
                         TokenKind::Pop => 0x26,
                         TokenKind::Clc => 0x2C,
                         _ => {
-                            return Err("This operation does not take a single register argument"
-                                .to_owned())
+                            return Err(format!("'{:?}' does not take a single register argument", op_kind))
                         }
                     },
                     'i' => match op_kind {
@@ -388,8 +387,7 @@ impl CodeGen {
                         TokenKind::Jmp => 0x30,
                         TokenKind::Jsr => 0x31,
                         _ => {
-                            return Err("This operation does not take a single immediate argument"
-                                .to_owned())
+                            return Err(format!("'{:?}' does not take a single immediate argument", op_kind))
                         }
                     },
                     _ => panic!("Codegen error, param is not int or reg... oops"),
@@ -412,9 +410,7 @@ impl CodeGen {
                         TokenKind::Adc => 0x28,
                         TokenKind::Sbc => 0x2A,
                         _ => {
-                            return Err(
-                                "This operation does not take two register arguments".to_owned()
-                            )
+                            return Err(format!("'{:?}' does not take two register arguments", op_kind))
                         }
                     },
                     'i' => match op_kind {
@@ -422,10 +418,7 @@ impl CodeGen {
                         TokenKind::Str => 0x11,
                         TokenKind::Stx => 0x13,
                         _ => {
-                            return Err(
-                                "This operation does not take a register and then an immediate"
-                                    .to_owned(),
-                            )
+                            return Err(format!("'{:?}' does not take a register and then an immediate", op_kind))
                         }
                     },
                     _ => panic!("Codegen error, value not a variable or immediate... oops"),
@@ -448,13 +441,10 @@ impl CodeGen {
                         TokenKind::Adc => 0x27,
                         TokenKind::Sbc => 0x29,
                         _ => {
-                            return Err(format!(
-                                "{:?} does not take an immediate and then a register",
-                                op_kind
-                            ))
+                            return Err(format!("{:?} does not take an immediate and then a register", op_kind))
                         }
                     },
-                    'i' => return Err("Instruction does not support these parameters".to_owned()),
+                    'i' => return Err(format!("Two ints provided to '{:?}', which isn't supported", op_kind)),
                     _ => panic!("Codegen error, param is not int or reg... oops"),
                 },
                 _ => panic!("Codegen error, param is not int or reg... oops"),
