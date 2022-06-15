@@ -47,6 +47,10 @@ impl Preprocessor {
                         self.out.push(c);
                         status = ReadingStatus::IgnoreDirectives('"');
                     }
+                    '\'' => {
+                        self.out.push(c);
+                        status = ReadingStatus::IgnoreDirectives('\'');
+                    }
                     ';' => {
                         self.out.push(c);
                         status = ReadingStatus::IgnoreDirectives('\n');
