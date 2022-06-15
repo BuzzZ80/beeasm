@@ -385,7 +385,7 @@ pub fn tokenize_one_token(data: &str) -> Result<Token, String> {
         '0'..='9' | '$' | '%' => tokenize_number(data)?,
         '\'' => tokenize_char(data)?,
         '"' => tokenize_string_literal(data)?,
-        c @ '_' | c if c.is_alphanumeric() => tokenize_identifier(data)?,
+        c if c.is_alphanumeric() || c == '_' => tokenize_identifier(data)?,
         c => return Err(format!("Unexpected character {}", c)),
     };
 
