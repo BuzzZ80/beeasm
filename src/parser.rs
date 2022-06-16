@@ -444,8 +444,7 @@ impl Parser {
                     }
                 };
             }
-            Some(t) => return Err(format!("Expected an integer or label, found {:?}", t.0)),
-            None => return Ok(None),
+            _ => return Ok(None),
         }
 
         Ok(Some(expr))
