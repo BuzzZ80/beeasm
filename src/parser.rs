@@ -299,7 +299,7 @@ impl Parser {
 
     fn term(&mut self) -> Result<Option<Expr>, String> {
         let expr = Expr {
-            kind: ExprKind::Expression,
+            kind: ExprKind::Term,
             exprs: vec![],
             line: match self.peek() {
                 Some(t) => t.2,
@@ -335,7 +335,7 @@ impl Parser {
 
     fn factor(&mut self) -> Result<Option<Expr>, String> {
         let expr = Expr {
-            kind: ExprKind::Expression,
+            kind: ExprKind::Factor,
             exprs: vec![],
             line: match self.peek() {
                 Some(t) => t.2,
@@ -371,7 +371,7 @@ impl Parser {
 
     fn unary(&mut self) -> Result<Option<Expr>, String> {
         let expr = Expr {
-            kind: ExprKind::Expression,
+            kind: ExprKind::Unary,
             exprs: vec![],
             line: match self.peek() {
                 Some(t) => t.2,
