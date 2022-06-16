@@ -280,7 +280,7 @@ impl Parser {
     }
 
     fn expression(&mut self) -> Result<Option<Expr>, String> {
-        let expr = Expr {
+        let mut expr = Expr {
             kind: ExprKind::Expression,
             exprs: vec![],
             line: match self.peek() {
@@ -298,7 +298,7 @@ impl Parser {
     }
 
     fn term(&mut self) -> Result<Option<Expr>, String> {
-        let expr = Expr {
+        let mut expr = Expr {
             kind: ExprKind::Term,
             exprs: vec![],
             line: match self.peek() {
@@ -315,8 +315,8 @@ impl Parser {
         loop {
             match self.peek() {
                 Some(t) if matches!(t.0, TokenKind::Plus | TokenKind::Minus) => {
-                    expr.exprs.push(Expr{
-                        kind: ExprKind::Operator(t.0),
+                    expr.exprs.push(Expr {
+                        kind: ExprKind::Operator(t.0.to_owned()),
                         exprs: vec![],
                         line: t.2,
                     });
@@ -334,7 +334,7 @@ impl Parser {
     }
 
     fn factor(&mut self) -> Result<Option<Expr>, String> {
-        let expr = Expr {
+        let mut expr = Expr {
             kind: ExprKind::Factor,
             exprs: vec![],
             line: match self.peek() {
@@ -351,8 +351,8 @@ impl Parser {
         loop {
             match self.peek() {
                 Some(t) if matches!(t.0, TokenKind::Asterisk | TokenKind::Slash) => {
-                    expr.exprs.push(Expr{
-                        kind: ExprKind::Operator(t.0),
+                    expr.exprs.push(Expr {
+                        kind: ExprKind::Operator(t.0.to_owned()),
                         exprs: vec![],
                         line: t.2,
                     });
@@ -370,7 +370,7 @@ impl Parser {
     }
 
     fn unary(&mut self) -> Result<Option<Expr>, String> {
-        let expr = Expr {
+        let mut expr = Expr {
             kind: ExprKind::Unary,
             exprs: vec![],
             line: match self.peek() {
@@ -381,28 +381,28 @@ impl Parser {
 
         match self.peek() {
             Some(t) if matches!(t.0, TokenKind::Plus | TokenKind::Minus) => {
-                expr.exprs.push(Expr{
-                    kind: ExprKind::Operator(t.0),
+                expr.exprs.push(Expr {
+                    kind: ExprKind::Operator(t.0.to_owned()),
                     exprs: vec![],
                     line: t.2,
                 });
                 self.next();
                 match self.unary()? {
                     Some(e) => expr.exprs.push(e),
-                    None => return Err("Expected value after unary +, -, or ~ operator".to_owned())
+                    None => return Err("Expected value after unary +, -, or ~ operator".to_owned()),
                 }
             }
             _ => match self.primary()? {
                 Some(e) => expr.exprs.push(e),
                 None => return Ok(None),
-            }
+            },
         };
 
         Ok(Some(expr))
     }
 
     fn primary(&mut self) -> Result<Option<Expr>, String> {
-        let expr = Expr {
+        let mut expr = Expr {
             kind: ExprKind::Primary,
             exprs: vec![],
             line: match self.peek() {
@@ -413,7 +413,7 @@ impl Parser {
 
         match self.peek() {
             Some(Token(TokenKind::Integer(n), _, line)) => {
-                expr.exprs.push(Expr{
+                expr.exprs.push(Expr {
                     kind: ExprKind::Integer(*n),
                     exprs: vec![],
                     line: *line,
@@ -421,7 +421,7 @@ impl Parser {
                 self.next();
             }
             Some(Token(TokenKind::Label(l), _, line)) => {
-                expr.exprs.push(Expr{
+                expr.exprs.push(Expr {
                     kind: ExprKind::Label(l.to_owned()),
                     exprs: vec![],
                     line: *line,
@@ -438,10 +438,14 @@ impl Parser {
                 match self.peek() {
                     Some(t) if matches!(t.0, TokenKind::CloseParen) => self.next(),
                     Some(t) => return Err(format!("Expected closing parentheses, {} found", t)),
-                    None => return Err("Expected closing parentheses, but end of file was reached.".to_owned())
+                    None => {
+                        return Err(
+                            "Expected closing parentheses, but end of file was reached.".to_owned()
+                        )
+                    }
                 };
-
             }
+            _ => panic!("err"),
         }
 
         Ok(Some(expr))

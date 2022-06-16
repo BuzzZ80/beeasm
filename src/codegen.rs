@@ -545,48 +545,83 @@ impl CodeGen {
             _ => panic!("Codegen error, expression() was called on a non-expression value"),
         };
 
-        match exprs.len() {
-            1 => match &exprs[0].kind {
-                ExprKind::Integer(n) => Ok(*n),
-                ExprKind::Label(s) => match self.labels.get(s) {
-                    Some(n) => Ok(*n as u16),
-                    None => Err(format!("Label \"{}\" not found", s)),
+        let val = self.term(&exprs[0])?;
+
+        Ok(val)
+    }
+
+    fn term(&self, expr: &Expr) -> Result<u16, String> {
+        let mut val = 0;
+
+        let mut operation = TokenKind::Plus;
+
+        for expr in &expr.exprs {
+            match &expr.kind {
+                ExprKind::Operator(tk) => operation = tk.to_owned(),
+                ExprKind::Factor => match operation {
+                    TokenKind::Plus => val += self.factor(&expr)?,
+                    TokenKind::Minus => val -= self.factor(&expr)?,
+                    tk => panic!("{:?} found as operation in codegen.term... oops", tk),
                 },
-                ExprKind::Unary(k) => {
-                    if exprs[0].exprs.len() != 1 {
-                        panic!("Parser error put too many values in a Unary()... oops");
-                    }
-
-                    let val = match exprs[0].exprs[0].kind {
-                        ExprKind::Integer(val) => val,
-                        _ => panic!("Non-integer Expr in Unary... oops"),
-                    };
-
-                    match k {
-                        TokenKind::Minus => {
-                            if val > i16::MAX as u16 {
-                                return Err(format!(
-                                    "{} cannot fit in a signed word",
-                                    -(val as i32)
-                                ));
-                            }
-                            Ok(-(val as i16) as u16)
-                        }
-                        TokenKind::Plus => {
-                            if val > i16::MAX as u16 {
-                                return Err(format!("{} cannot fit in a signed word", val as i32));
-                            }
-                            Ok(val)
-                        }
-                        _ => panic!("Parsing error put a non-unary operator in a Unary()... oops"),
-                    }
-                }
-                _ => {
-                    panic!("Parser error did not put an immediate or label in expression()... oops")
-                }
-            },
-            _ => panic!("Parser error put too many parameters to one expression in expression()"),
+                ek => panic!("{:?} found in term during codegen... oops", ek),
+            }
         }
+
+        Ok(val)
+    }
+
+    fn factor(&self, expr: &Expr) -> Result<u16, String> {
+        let mut val = 0;
+
+        let mut operation = TokenKind::Plus;
+
+        for expr in &expr.exprs {
+            match &expr.kind {
+                ExprKind::Operator(tk) => operation = tk.to_owned(),
+                ExprKind::Unary => match operation {
+                    TokenKind::Plus => val += self.unary(&expr)?, // For initial load
+                    TokenKind::Asterisk => val *= self.unary(&expr)?,
+                    TokenKind::Slash => val /= self.unary(&expr)?,
+                    tk => panic!("{:?} found as operation in codegen.factor... oops", tk),
+                },
+                ek => panic!("{:?} found in factor during codegen... oops", ek),
+            }
+        }
+
+        Ok(val)
+    }
+
+    fn unary(&self, expr: &Expr) -> Result<u16, String> {
+        let mut val = 0;
+
+        let mut operation = TokenKind::Plus;
+
+        for expr in &expr.exprs {
+            match &expr.kind {
+                ExprKind::Operator(tk) => operation = tk.to_owned(),
+                ExprKind::Primary => match operation {
+                    TokenKind::Plus => val += self.primary(&expr)?,
+                    TokenKind::Minus => val -= self.primary(&expr)?,
+                    tk => panic!("{:?} found as operation in codegen.unary... oops", tk),
+                },
+                ek => panic!("{:?} found in unary during codegen... oops", ek),
+            }
+        }
+
+        Ok(val)
+    }
+
+    fn primary(&self, expr: &Expr) -> Result<u16, String> {
+        let mut val = 0;
+
+        for expr in &expr.exprs {
+            match &expr.kind {
+                ExprKind::Integer(n) => val = *n,
+                ek => panic!("{:?} found in unary during codegen... oops", ek),
+            }
+        }
+
+        Ok(val)
     }
 
     fn directive(&mut self) -> Result<Option<()>, String> {
