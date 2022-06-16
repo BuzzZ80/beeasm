@@ -74,7 +74,7 @@ impl Parser {
      *[ ] factor      = unary (("-" | "+") unary)*
      *[ ] unary       = ("+" | "-" | "~") unary
      *                  | primary
-     *[ ] primary     = INTEGER | LABEL | unary | grouping
+     *[ ] primary     = INTEGER | LABEL | grouping
      *
      *[X] directive   = DIRECTIVE (expression | BYTE | STRING)*
      *
@@ -401,7 +401,51 @@ impl Parser {
         Ok(Some(expr))
     }
 
-    fn primary(&mut self) -> Result<Option<Expr>, String> {}
+    fn primary(&mut self) -> Result<Option<Expr>, String> {
+        let expr = Expr {
+            kind: ExprKind::Primary,
+            exprs: vec![],
+            line: match self.peek() {
+                Some(t) => t.2,
+                None => return Ok(None),
+            },
+        };
+
+        match self.peek() {
+            Some(Token(TokenKind::Integer(n), _, line)) => {
+                expr.exprs.push(Expr{
+                    kind: ExprKind::Integer(*n),
+                    exprs: vec![],
+                    line: *line,
+                });
+                self.next();
+            }
+            Some(Token(TokenKind::Label(l), _, line)) => {
+                expr.exprs.push(Expr{
+                    kind: ExprKind::Label(l.to_owned()),
+                    exprs: vec![],
+                    line: *line,
+                });
+                self.next();
+            }
+            Some(t) if matches!(t.0, TokenKind::OpenParen) => {
+                self.next();
+                match self.expression()? {
+                    Some(e) => expr.exprs.push(e),
+                    None => return Err("Expected expression inside of parentheses".to_owned()),
+                }
+                self.next();
+                match self.peek() {
+                    Some(t) if matches!(t.0, TokenKind::CloseParen) => self.next(),
+                    Some(t) => return Err(format!("Expected closing parentheses, {} found", t)),
+                    None => return Err("Expected closing parentheses, but end of file was reached.".to_owned())
+                };
+
+            }
+        }
+
+        Ok(Some(expr))
+    }
 
     fn directive(&mut self) -> Result<Option<Expr>, String> {
         let directive_token = match self.peek() {
