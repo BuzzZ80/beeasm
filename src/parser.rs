@@ -333,7 +333,41 @@ impl Parser {
         Ok(Some(expr))
     }
 
-    fn factor(&mut self) -> Result<Option<Expr>, String> {}
+    fn factor(&mut self) -> Result<Option<Expr>, String> {
+        let expr = Expr {
+            kind: ExprKind::Expression,
+            exprs: vec![],
+            line: match self.peek() {
+                Some(t) => t.2,
+                None => return Ok(None),
+            },
+        };
+
+        match self.factor()? {
+            Some(e) => expr.exprs.push(e),
+            None => return Ok(None),
+        };
+
+        loop {
+            match self.peek() {
+                Some(t) if matches!(t.0, TokenKind::Asterisk | TokenKind::Slash) => {
+                    expr.exprs.push(Expr{
+                        kind: ExprKind::Operator(t.0),
+                        exprs: vec![],
+                        line: t.2,
+                    });
+                }
+                _ => break,
+            }
+            self.next();
+            match self.factor()? {
+                Some(e) => expr.exprs.push(e),
+                None => return Err("Expected value after * or / operator".to_owned()),
+            }
+        }
+
+        Ok(Some(expr))
+    }
 
     fn unary(&mut self) -> Result<Option<Expr>, String> {}
 
