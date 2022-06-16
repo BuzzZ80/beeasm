@@ -51,8 +51,6 @@ fn main() -> Result<(), ErrString> {
 
     let tokens = Lexer::new(&program).tokenize()?;
 
-    println!("{:#?}", tokens);
-
     let statements = Parser::new(tokens).parse()?;
 
     let mut codegen = CodeGen::new(statements);

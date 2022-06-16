@@ -551,7 +551,7 @@ impl CodeGen {
     }
 
     fn term(&self, expr: &Expr) -> Result<u16, String> {
-        let mut val = 0;
+        let mut val: u16 = 0;
 
         let mut operation = TokenKind::Plus;
 
@@ -559,8 +559,8 @@ impl CodeGen {
             match &expr.kind {
                 ExprKind::Operator(tk) => operation = tk.to_owned(),
                 ExprKind::Factor => match operation {
-                    TokenKind::Plus => val += self.factor(&expr)?,
-                    TokenKind::Minus => val -= self.factor(&expr)?,
+                    TokenKind::Plus => val = val.wrapping_add(self.factor(&expr)?),
+                    TokenKind::Minus => val = val.wrapping_sub(self.factor(&expr)?),
                     tk => panic!("{:?} found as operation in codegen.term... oops", tk),
                 },
                 ek => panic!("{:?} found in term during codegen... oops", ek),
@@ -571,7 +571,7 @@ impl CodeGen {
     }
 
     fn factor(&self, expr: &Expr) -> Result<u16, String> {
-        let mut val = 0;
+        let mut val: u16 = 0;
 
         let mut operation = TokenKind::Plus;
 
@@ -579,9 +579,9 @@ impl CodeGen {
             match &expr.kind {
                 ExprKind::Operator(tk) => operation = tk.to_owned(),
                 ExprKind::Unary => match operation {
-                    TokenKind::Plus => val += self.unary(&expr)?, // For initial load
-                    TokenKind::Asterisk => val *= self.unary(&expr)?,
-                    TokenKind::Slash => val /= self.unary(&expr)?,
+                    TokenKind::Plus => val = val.wrapping_add(self.unary(&expr)?), // For initial load
+                    TokenKind::Asterisk => val = val.wrapping_mul(self.unary(&expr)?),
+                    TokenKind::Slash => val = val.wrapping_div(self.unary(&expr)?),
                     tk => panic!("{:?} found as operation in codegen.factor... oops", tk),
                 },
                 ek => panic!("{:?} found in factor during codegen... oops", ek),
@@ -592,7 +592,7 @@ impl CodeGen {
     }
 
     fn unary(&self, expr: &Expr) -> Result<u16, String> {
-        let mut val = 0;
+        let mut val:u16 = 0;
 
         let mut operation = TokenKind::Plus;
 
@@ -600,13 +600,13 @@ impl CodeGen {
             match &expr.kind {
                 ExprKind::Operator(tk) => operation = tk.to_owned(),
                 ExprKind::Unary => match operation {
-                    TokenKind::Plus => val += self.unary(&expr)?,
-                    TokenKind::Minus => val -= self.unary(&expr)?,
+                    TokenKind::Plus => val = val.wrapping_add(self.unary(&expr)?),
+                    TokenKind::Minus => val = val.wrapping_sub(self.unary(&expr)?),
                     tk => panic!("{:?} found as operation in codegen.unary... oops", tk),
                 }
                 ExprKind::Primary => match operation {
-                    TokenKind::Plus => val += self.primary(&expr)?,
-                    TokenKind::Minus => val -= self.primary(&expr)?,
+                    TokenKind::Plus => val = val.wrapping_add(self.primary(&expr)?),
+                    TokenKind::Minus => val = val.wrapping_sub(self.primary(&expr)?),
                     tk => panic!("{:?} found as operation in codegen.unary... oops", tk),
                 },
                 ek => panic!("{:?} found in unary during codegen... oops", ek),
