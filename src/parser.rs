@@ -74,7 +74,7 @@ impl Parser {
      *[ ] factor      = unary (("-" | "+") unary)*
      *[ ] unary       = ("+" | "-" | "~") unary
      *                  | primary
-     *[ ] primary     = INTEGER | LABEL | unary | binary | grouping
+     *[ ] primary     = INTEGER | LABEL | unary | grouping
      *
      *[X] directive   = DIRECTIVE (expression | BYTE | STRING)*
      *
@@ -370,7 +370,35 @@ impl Parser {
     }
 
     fn unary(&mut self) -> Result<Option<Expr>, String> {
+        let expr = Expr {
+            kind: ExprKind::Expression,
+            exprs: vec![],
+            line: match self.peek() {
+                Some(t) => t.2,
+                None => return Ok(None),
+            },
+        };
 
+        match self.peek() {
+            Some(t) if matches!(t.0, TokenKind::Plus | TokenKind::Minus) => {
+                expr.exprs.push(Expr{
+                    kind: ExprKind::Operator(t.0),
+                    exprs: vec![],
+                    line: t.2,
+                });
+                self.next();
+                match self.unary()? {
+                    Some(e) => expr.exprs.push(e),
+                    None => return Err("Expected value after unary +, -, or ~ operator".to_owned())
+                }
+            }
+            _ => match self.primary()? {
+                Some(e) => expr.exprs.push(e),
+                None => return Ok(None),
+            }
+        };
+
+        Ok(Some(expr))
     }
 
     fn primary(&mut self) -> Result<Option<Expr>, String> {}
