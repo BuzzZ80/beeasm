@@ -14,17 +14,17 @@ pub enum ExprKind {
     Op(TokenKind),          // Operations only
     Byte(u8),
     String(String),
-    Label(String),
     Register(TokenKind),    // Registers only
     Directive(TokenKind),
 
     Expression,
-    Term(TokenKind),        // + or - only
-    Factor(TokenKind),      // * or / only
-    Unary(TokenKind),       // + - or ~ only (once ~ is implemented)
-    Primary,                //
-    Integer(u16),           // 
-    Grouping,
+    Term,
+    Factor,
+    Unary,
+    Primary,
+
+    Integer(u16),
+    Label(String),
 }
 
 #[derive(Clone)]
@@ -67,10 +67,12 @@ impl Parser {
      *
      *[X] instruction = op | op "?" CONDITION
      *[X] op          = OPCODE | OPCODE (REGISTER | expression) | OPCODE (REGISTER | expression) "->" (REGISTER | expression)
-     *[/] expression  = INTEGER | LABEL | unary | binary | grouping
-     *[X] unary       = OPERATOR_UNARY expression
-     *[ ] binary      = expression OPERATOR_BINARY expression
-     *[ ] grouping    = "(" expression ")"
+     *[/] expression  = term
+     *[ ] term        = factor (("+" | "-"") factor)*
+     *[ ] factor      = unary (("-" | "+") unary)*
+     *[ ] unary       = ("+" | "-" | "~") unary 
+     *                  | primary
+     *[ ] primary     = INTEGER | LABEL | unary | binary | grouping
      *
      *[X] directive   = DIRECTIVE (expression | BYTE | STRING)*
      *
@@ -276,97 +278,38 @@ impl Parser {
     }
 
     fn expression(&mut self) -> Result<Option<Expr>, String> {
-        let mut expr = Expr {
+        let expr = Expr {
             kind: ExprKind::Expression,
             exprs: vec![],
-            line: 0,
+            line: match self.peek() {
+                Some(t) => t.2,
+                None => return Ok(None),
+            }
         };
 
-        let expr_token = match self.peek() {
-            Some(t) => {
-                expr.line = t.2;
-                t
-            }
+        match self.term()? {
+            Some(e) => expr.exprs.push(e),
             None => return Ok(None),
-        };
-
-        match self.tokens.get(self.index + 1) {
-            Some(x) if matches!(x.0, TokenKind::Colon) => return Ok(None),
-            _ => (),
-        };
-
-        match &expr_token.0 {
-            TokenKind::Integer(v) => {
-                expr.exprs.push(Expr {
-                    kind: ExprKind::Integer(*v),
-                    exprs: vec![],
-                    line: expr_token.2,
-                });
-
-                self.next();
-            }
-            TokenKind::Label(n) => {
-                expr.exprs.push(Expr {
-                    kind: ExprKind::Label(n.to_owned()),
-                    exprs: vec![],
-                    line: expr_token.2,
-                });
-                self.next();
-            }
-            TokenKind::Minus | TokenKind::Plus => {
-                expr.exprs.push(match self.unary()? {
-                    Some(expr) => expr,
-                    None => panic!("No value after unary operator."),
-                });
-            }
-            _ => return Ok(None),
         };
 
         Ok(Some(expr))
     }
 
+    fn term(&mut self) -> Result<Option<Expr>, String> {
+        
+    }
+
+    fn factor(&mut self) -> Result<Option<Expr>, String> {
+        
+    }
+
     fn unary(&mut self) -> Result<Option<Expr>, String> {
-        let (operator_token_kind, line) = match self.peek() {
-            Some(t) => (&t.0, t.2),
-            None => return Ok(None),
-        };
-
-        let kind = match operator_token_kind {
-            TokenKind::Plus => ExprKind::Unary(TokenKind::Plus),
-            TokenKind::Minus => ExprKind::Unary(TokenKind::Minus),
-            _ => return Ok(None),
-        };
-
-        self.next();
-
-        let value = match self.peek() {
-            Some(Token(TokenKind::Integer(v), _, _)) => *v,
-            Some(_) => return Err("No value found after unary operator".to_owned()),
-            None => return Ok(None),
-        };
-
-        self.next();
-
-        Ok(Some(Expr {
-            kind,
-            exprs: vec![Expr {
-                kind: ExprKind::Integer(value),
-                exprs: vec![],
-                line,
-            }],
-            line,
-        }))
+        
     }
 
-    /*
-    fn binary(&mut self) -> Result<Option<Expr>, String> {
-        Err("UNIMPLEMENTED/TODO".to_owned())
+    fn primary(&mut self) -> Result<Option<Expr>, String> {
+        
     }
-
-    fn grouping(&mut self) -> Result<Option<Expr>, String> {
-        Err("UNIMPLEMENTED/TODO".to_owned())
-    }
-    */
 
     fn directive(&mut self) -> Result<Option<Expr>, String> {
         let directive_token = match self.peek() {
