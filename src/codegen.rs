@@ -617,6 +617,11 @@ impl CodeGen {
         for expr in &expr.exprs {
             match &expr.kind {
                 ExprKind::Integer(n) => val = *n,
+                ExprKind::Label(s) => match self.labels.get(s) {
+                    Some(n) => val = *n as u16,
+                    None => return Err(format!("Label \"{}\" not found", s))
+                }
+                ExprKind::Expression => val = self.expression(&expr)?,
                 ek => panic!("{:?} found in unary during codegen... oops", ek),
             }
         }
