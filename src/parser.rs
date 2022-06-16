@@ -11,10 +11,10 @@ pub struct Parser {
 #[derive(Debug, Clone)]
 pub enum ExprKind {
     Instruction(TokenKind), // Conditions only
-    Op(TokenKind),          // Operations only
+    Op(TokenKind),          // Instructions only
     Byte(u8),
     String(String),
-    Register(TokenKind),    // Registers only
+    Register(TokenKind), // Registers only
     Directive(TokenKind),
 
     Expression,
@@ -25,6 +25,8 @@ pub enum ExprKind {
 
     Integer(u16),
     Label(String),
+
+    Operator(TokenKind),
 }
 
 #[derive(Clone)]
@@ -70,7 +72,7 @@ impl Parser {
      *[/] expression  = term
      *[ ] term        = factor (("+" | "-"") factor)*
      *[ ] factor      = unary (("-" | "+") unary)*
-     *[ ] unary       = ("+" | "-" | "~") unary 
+     *[ ] unary       = ("+" | "-" | "~") unary
      *                  | primary
      *[ ] primary     = INTEGER | LABEL | unary | binary | grouping
      *
@@ -284,7 +286,7 @@ impl Parser {
             line: match self.peek() {
                 Some(t) => t.2,
                 None => return Ok(None),
-            }
+            },
         };
 
         match self.term()? {
@@ -296,20 +298,46 @@ impl Parser {
     }
 
     fn term(&mut self) -> Result<Option<Expr>, String> {
-        
+        let expr = Expr {
+            kind: ExprKind::Expression,
+            exprs: vec![],
+            line: match self.peek() {
+                Some(t) => t.2,
+                None => return Ok(None),
+            },
+        };
+
+        match self.factor()? {
+            Some(e) => expr.exprs.push(e),
+            None => return Ok(None),
+        };
+
+        loop {
+            match self.peek() {
+                Some(t) if matches!(t.0, TokenKind::Plus | TokenKind::Minus) => {
+                    expr.exprs.push(Expr{
+                        kind: ExprKind::Operator(t.0),
+                        exprs: vec![],
+                        line: t.2,
+                    });
+                }
+                _ => break,
+            }
+            self.next();
+            match self.factor()? {
+                Some(e) => expr.exprs.push(e),
+                None => return Err("Expected value after + or - operator".to_owned()),
+            }
+        }
+
+        Ok(Some(expr))
     }
 
-    fn factor(&mut self) -> Result<Option<Expr>, String> {
-        
-    }
+    fn factor(&mut self) -> Result<Option<Expr>, String> {}
 
-    fn unary(&mut self) -> Result<Option<Expr>, String> {
-        
-    }
+    fn unary(&mut self) -> Result<Option<Expr>, String> {}
 
-    fn primary(&mut self) -> Result<Option<Expr>, String> {
-        
-    }
+    fn primary(&mut self) -> Result<Option<Expr>, String> {}
 
     fn directive(&mut self) -> Result<Option<Expr>, String> {
         let directive_token = match self.peek() {
