@@ -343,7 +343,7 @@ impl Parser {
             },
         };
 
-        match self.factor()? {
+        match self.unary()? {
             Some(e) => expr.exprs.push(e),
             None => return Ok(None),
         };
@@ -360,7 +360,7 @@ impl Parser {
                 _ => break,
             }
             self.next();
-            match self.factor()? {
+            match self.unary()? {
                 Some(e) => expr.exprs.push(e),
                 None => return Err("Expected value after * or / operator".to_owned()),
             }
@@ -369,7 +369,9 @@ impl Parser {
         Ok(Some(expr))
     }
 
-    fn unary(&mut self) -> Result<Option<Expr>, String> {}
+    fn unary(&mut self) -> Result<Option<Expr>, String> {
+
+    }
 
     fn primary(&mut self) -> Result<Option<Expr>, String> {}
 
