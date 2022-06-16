@@ -599,6 +599,11 @@ impl CodeGen {
         for expr in &expr.exprs {
             match &expr.kind {
                 ExprKind::Operator(tk) => operation = tk.to_owned(),
+                ExprKind::Unary => match operation {
+                    TokenKind::Plus => val += self.unary(&expr)?,
+                    TokenKind::Minus => val -= self.unary(&expr)?,
+                    tk => panic!("{:?} found as operation in codegen.unary... oops", tk),
+                }
                 ExprKind::Primary => match operation {
                     TokenKind::Plus => val += self.primary(&expr)?,
                     TokenKind::Minus => val -= self.primary(&expr)?,
