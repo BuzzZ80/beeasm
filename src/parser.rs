@@ -434,7 +434,6 @@ impl Parser {
                     Some(e) => expr.exprs.push(e),
                     None => return Err("Expected expression inside of parentheses".to_owned()),
                 }
-                self.next();
                 match self.peek() {
                     Some(t) if matches!(t.0, TokenKind::CloseParen) => self.next(),
                     Some(t) => return Err(format!("Expected closing parentheses, {} found", t)),
@@ -445,7 +444,8 @@ impl Parser {
                     }
                 };
             }
-            _ => panic!("err"),
+            Some(t) => return Err(format!("Expected an integer or label, found {:?}", t.0)),
+            None => return Ok(None),
         }
 
         Ok(Some(expr))
