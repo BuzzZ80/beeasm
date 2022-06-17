@@ -7,9 +7,17 @@ edition = "2021"
 
 [profile.size_opt]
 inherits = "release"
+debug = 0
 opt-level = "z"
 codegen-units = 1
 panic = "abort"
 strip = true
+
+[profile.speed_opt]
+inherits = "release"
+debug = 0
+codegen-units = 1
+opt-level = 3
+strip = "debuginfo"
 
 [dependencies]
