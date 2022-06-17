@@ -2,9 +2,12 @@
 An assembler for the Bee16
 
 # Building
-Thanks to the beauty of rust, all you need to do to build this
+Thanks to the beauty of rust, just do
 `cargo build --release`
-in the main directory
+in the main directory to build
+
+Alternatively, I've crated a size_opt profile for binary size optimization, which can be used by doing
+`cargo build --profile size_opt`
 
 # Use
 
