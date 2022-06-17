@@ -210,6 +210,7 @@ impl Parser {
             | TokenKind::Clcr
             | TokenKind::Jmp
             | TokenKind::Jsr
+            | TokenKind::Scmp
             | TokenKind::Rts
             | TokenKind::Int
             | TokenKind::Cli
