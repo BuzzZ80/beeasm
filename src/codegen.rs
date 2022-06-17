@@ -602,11 +602,13 @@ impl CodeGen {
                 ExprKind::Unary => match operation {
                     TokenKind::Plus => val = val.wrapping_add(self.unary(&expr)?),
                     TokenKind::Minus => val = val.wrapping_sub(self.unary(&expr)?),
+                    TokenKind::Tilde => val = !self.unary(&expr)?,
                     tk => panic!("{:?} found as operation in codegen.unary... oops", tk),
                 }
                 ExprKind::Primary => match operation {
                     TokenKind::Plus => val = val.wrapping_add(self.primary(&expr)?),
                     TokenKind::Minus => val = val.wrapping_sub(self.primary(&expr)?),
+                    TokenKind::Tilde => val = !self.primary(&expr)?,
                     tk => panic!("{:?} found as operation in codegen.unary... oops", tk),
                 },
                 ek => panic!("{:?} found in unary during codegen... oops", ek),
