@@ -238,9 +238,9 @@ impl Parser {
 
         self.next();
 
-        match self.register_or_expression() {
-            Ok(Some(val)) => op.exprs.push(val),
-            _ => return Err("No 2nd parameter after '->'".to_owned()),
+        match self.register_or_expression()? {
+            Some(val) => op.exprs.push(val),
+            None => return Err("No 2nd parameter after '->'".to_owned()),
         }
 
         Ok(Some(op))
