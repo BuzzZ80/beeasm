@@ -273,10 +273,9 @@ impl Parser {
         };
 
         let expr = self.expression();
-        match expr {
-            Ok(Some(expr)) => Ok(Some(expr)),
-            Ok(None) => Ok(None),
-            Err(e) => Err(e),
+        match expr? {
+            Some(expr) => Ok(Some(expr)),
+            None => Ok(None),
         }
     }
 
