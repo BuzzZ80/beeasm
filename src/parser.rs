@@ -420,13 +420,29 @@ impl Parser {
                 });
                 self.next();
             }
-            Some(Token(TokenKind::Label(l), _, line)) => {
-                expr.exprs.push(Expr {
-                    kind: ExprKind::Label(l.to_owned()),
-                    exprs: vec![],
-                    line: *line,
-                });
+            Some(Token(TokenKind::Label(_), _, _)) => {
+                let (kind, line) = match self.peek() {
+                    Some(Token(TokenKind::Label(l), _, line)) => (ExprKind::Label(l.to_owned()), *line),
+                    _ => return Ok(None),
+                };
+        
                 self.next();
+        
+                match self.peek() {
+                    Some(Token(TokenKind::Colon, _, _)) => {
+                        self.index -= 1;
+                        return Ok(None)
+                    },
+                    _ => (),
+                };
+        
+                self.next();
+
+                expr.exprs.push(Expr {
+                    kind,
+                    exprs: vec![],
+                    line,
+                });
             }
             Some(t) if matches!(t.0, TokenKind::OpenParen) => {
                 self.next();
