@@ -436,7 +436,6 @@ impl Parser {
                     _ => (),
                 };
         
-                self.next();
 
                 expr.exprs.push(Expr {
                     kind,
