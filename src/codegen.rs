@@ -239,18 +239,7 @@ impl CodeGen {
                 };
 
                 let label = match &exprs[0].kind {
-                    ExprKind::Expression => match &exprs[0].exprs.get(0) {
-                        Some(expr) => match &expr.kind {
-                            ExprKind::Label(s) => s.to_owned(),
-                            _ => {
-                                return Err(format!(
-                                    "Expected identifier, found {:?}",
-                                    &exprs[0].exprs[0]
-                                ))
-                            }
-                        },
-                        None => panic!("Parser error generated empty expression... oops"),
-                    },
+                    ExprKind::Expression => self.get_label_name(&exprs[0])?,
                     _ => return Err(format!("Expected identifier, found {:?}", &expr.kind)),
                 };
 
@@ -636,6 +625,28 @@ impl CodeGen {
         }
 
         Ok(val)
+    }
+
+    fn get_label_name(&self, expr: &Expr) -> Result<String, String> {
+        let mut current = expr;
+        loop {
+            match current.exprs.get(0) {
+                Some(Expr{
+                    kind: ExprKind::Label(l),
+                    exprs: _,
+                    line: _,
+                }) => {
+                    return Ok(l.to_owned());
+                }
+                Some(e) => {
+                    current = match current.exprs.get(0) {
+                        Some(e) => e,
+                        None => return Err(format!("Expected label, found {:?}", e))
+                    }
+                }
+                None => return Err(format!("Expected label, found {:?}", current))
+            }
+        }
     }
 
     fn directive(&mut self) -> Result<Option<()>, String> {
