@@ -554,6 +554,8 @@ impl CodeGen {
                 ExprKind::Factor => match operation {
                     TokenKind::Plus => val = val.wrapping_add(self.factor(expr)?),
                     TokenKind::Minus => val = val.wrapping_sub(self.factor(expr)?),
+                    TokenKind::LeftShift => val <<= self.factor(expr)?,
+                    TokenKind::RightShift => val >>= self.factor(expr)?,
                     tk => panic!("{:?} found as operation in codegen.term... oops", tk),
                 },
                 ek => panic!("{:?} found in term during codegen... oops", ek),
