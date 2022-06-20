@@ -422,20 +422,21 @@ impl Parser {
             }
             Some(Token(TokenKind::Label(_), _, _)) => {
                 let (kind, line) = match self.peek() {
-                    Some(Token(TokenKind::Label(l), _, line)) => (ExprKind::Label(l.to_owned()), *line),
+                    Some(Token(TokenKind::Label(l), _, line)) => {
+                        (ExprKind::Label(l.to_owned()), *line)
+                    }
                     _ => return Ok(None),
                 };
-        
+
                 self.next();
-        
+
                 match self.peek() {
                     Some(Token(TokenKind::Colon, _, _)) => {
                         self.index -= 1;
-                        return Ok(None)
-                    },
+                        return Ok(None);
+                    }
                     _ => (),
                 };
-        
 
                 expr.exprs.push(Expr {
                     kind,

@@ -633,7 +633,7 @@ impl CodeGen {
         let mut current = expr;
         loop {
             match current.exprs.get(0) {
-                Some(Expr{
+                Some(Expr {
                     kind: ExprKind::Label(l),
                     exprs: _,
                     line: _,
@@ -643,10 +643,10 @@ impl CodeGen {
                 Some(e) => {
                     current = match current.exprs.get(0) {
                         Some(e) => e,
-                        None => return Err(format!("Expected label, found {:?}", e))
+                        None => return Err(format!("Expected label, found {:?}", e)),
                     }
                 }
-                None => return Err(format!("Expected label, found {:?}", current))
+                None => return Err(format!("Expected label, found {:?}", current)),
             }
         }
     }
