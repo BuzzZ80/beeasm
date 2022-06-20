@@ -193,7 +193,7 @@ fn tokenize_char(data: &str) -> Result<Token, String> {
                 Some('z') => 0x0C as char,
                 Some('\\') => '\\',
                 Some('\'') => '\'',
-                Some(c) => return Err(format!("{} not a valid escape character", c)),
+                Some(c) => return Err(format!("{} is not a valid escape character", c)),
                 None => return Err("Reached EOF before finding a \"".to_owned()),
             }
         }
@@ -255,9 +255,10 @@ fn tokenize_string_literal(data: &str) -> Result<Token, String> {
                 match chars.next() {
                     Some('n') => 0x0A as char,
                     Some('c') => 0x0B as char,
+                    Some('z') => 0x0C as char,
                     Some('\\') => '\\',
                     Some('\"') => '"',
-                    Some(c) => return Err(format!("{} not a valid escape character", c)),
+                    Some(c) => return Err(format!("{} is not a valid escape character", c)),
                     None => return Err("Reached EOF before finding a \"".to_owned()),
                 }
             }
