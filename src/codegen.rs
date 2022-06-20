@@ -350,6 +350,8 @@ impl CodeGen {
                 TokenKind::Ccb => 0x2E,
                 TokenKind::Clcr => 0x2F,
                 TokenKind::Rts => 0x32,
+                TokenKind::Sti => 0x36,
+                TokenKind::Cli => 0x37,
                 TokenKind::Exit => 0x3F,
                 _ => {
                     return Err(format!(
