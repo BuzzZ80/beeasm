@@ -40,8 +40,14 @@ impl Preprocessor {
                 self.line += 1;
             }
             match status {
-                s if c == '\\' => status = ReadingStatus::IgnoreNext(Box::new(s)), 
-                ReadingStatus::IgnoreNext(s) => status = *s, 
+                s if c == '\\' => {
+                    self.out.push(c);
+                    status = ReadingStatus::IgnoreNext(Box::new(s));
+                }
+                ReadingStatus::IgnoreNext(s) => {
+                    self.out.push(c);
+                    status = *s;
+                }
                 // Ignore directives within string literals or comments
                 ReadingStatus::PassThrough => match c {
                     '"' => {
