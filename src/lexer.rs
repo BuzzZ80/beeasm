@@ -190,6 +190,7 @@ fn tokenize_char(data: &str) -> Result<Token, String> {
             match chars.next() {
                 Some('n') => 0x0A as char,
                 Some('c') => 0x0B as char,
+                Some('z') => 0x0C as char,
                 Some('\\') => '\\',
                 Some('\'') => '\'',
                 Some(c) => return Err(format!("{} not a valid escape character", c)),
