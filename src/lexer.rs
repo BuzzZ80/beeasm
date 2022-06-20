@@ -74,6 +74,8 @@ pub enum TokenKind {
     Cli,
     Sti,
     Exit,
+    Rti,
+    Swap,
     // Conditionals
     Eq,
     Neq,
@@ -332,6 +334,8 @@ fn tokenize_identifier(data: &str) -> Result<Token, String> {
         "cli" => TokenKind::Cli,
         "sti" => TokenKind::Sti,
         "exit" => TokenKind::Exit,
+        "rti" => TokenKind::Rti,
+        "swap" => TokenKind::Swap,
         "eq" | "zr" => TokenKind::Eq,
         "neq" | "nzr" => TokenKind::Neq,
         "lt" => TokenKind::Lt,
