@@ -314,7 +314,15 @@ impl Parser {
 
         loop {
             match self.peek() {
-                Some(t) if matches!(t.0, TokenKind::Plus | TokenKind::Minus) => {
+                Some(t)
+                    if matches!(
+                        t.0,
+                        TokenKind::Plus
+                            | TokenKind::Minus
+                            | TokenKind::LeftShift
+                            | TokenKind::RightShift
+                    ) =>
+                {
                     expr.exprs.push(Expr {
                         kind: ExprKind::Operator(t.0.to_owned()),
                         exprs: vec![],
