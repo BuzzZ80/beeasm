@@ -10,6 +10,7 @@ pub struct Preprocessor {
 enum ReadingStatus {
     PassThrough,
     IgnoreDirectives(char),
+    IgnoreNext(Box<ReadingStatus>),
     GetDirective,
     GetFilename(usize),
 }
@@ -39,6 +40,8 @@ impl Preprocessor {
                 self.line += 1;
             }
             match status {
+                s if c == '\\' => status = ReadingStatus::IgnoreNext(Box::new(s)), 
+                ReadingStatus::IgnoreNext(s) => status = *s, 
                 // Ignore directives within string literals or comments
                 ReadingStatus::PassThrough => match c {
                     '"' => {
