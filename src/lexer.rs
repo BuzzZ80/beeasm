@@ -17,6 +17,8 @@ pub enum TokenKind {
     Minus,
     Asterisk,
     Slash,
+    LeftShift,
+    RightShift,
     OpenParen,
     CloseParen,
 
@@ -373,6 +375,8 @@ pub fn tokenize_one_token(data: &str) -> Result<Token, String> {
     let peek = chars.next().unwrap_or('\0');
 
     let token = match next {
+        '<' if peek == '<' => Token(TokenKind::LeftShift, 2, 0),
+        '>' if peek == '>' => Token(TokenKind::RightShift, 2, 0),
         '-' if peek == '>' => Token(TokenKind::Arrow, 2, 0),
         '>' => Token(TokenKind::Arrow, 1, 0),
         '?' => Token(TokenKind::QuestionMark, 1, 0),
