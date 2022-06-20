@@ -348,6 +348,7 @@ impl CodeGen {
                 TokenKind::Ccp => 0x09,
                 TokenKind::Scb => 0x2D,
                 TokenKind::Ccb => 0x2E,
+                TokenKind::Scr => 0x2E,
                 TokenKind::Clcr => 0x2F,
                 TokenKind::Rts => 0x32,
                 TokenKind::Sti => 0x36,

@@ -76,6 +76,7 @@ pub enum TokenKind {
     Exit,
     Rti,
     Swap,
+    Scr,
     // Conditionals
     Eq,
     Neq,
@@ -336,6 +337,7 @@ fn tokenize_identifier(data: &str) -> Result<Token, String> {
         "exit" => TokenKind::Exit,
         "rti" => TokenKind::Rti,
         "swap" => TokenKind::Swap,
+        "scr" => TokenKind::Scr,
         "eq" | "zr" => TokenKind::Eq,
         "neq" | "nzr" => TokenKind::Neq,
         "lt" => TokenKind::Lt,

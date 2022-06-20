@@ -217,7 +217,8 @@ impl Parser {
             | TokenKind::Sti
             | TokenKind::Exit
             | TokenKind::Rti
-            | TokenKind::Swap => Expr {
+            | TokenKind::Swap
+            | TokenKind::Scr => Expr {
                 kind: ExprKind::Op(op_token.0.to_owned()),
                 exprs: vec![],
                 line: op_token.2,
