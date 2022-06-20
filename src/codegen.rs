@@ -297,7 +297,7 @@ impl CodeGen {
             TokenKind::Lte => 0b0110,
             TokenKind::Gt => 0b01111,
             TokenKind::Cr => 0b1001,
-            TokenKind::Ncr => 0b1001,
+            TokenKind::Ncr => 0b1000,
             TokenKind::In => 0b1011,
             TokenKind::Nin => 0b1010,
             TokenKind::Ir => 0b1101,
