@@ -413,6 +413,8 @@ impl CodeGen {
                         TokenKind::Sbc => 0x2A,
                         TokenKind::Scmp => 0x34,
                         TokenKind::Swap => 0x39,
+                        TokenKind::Ldr => 0x3A,
+                        TokenKind::Str => 0x3B,
                         _ => {
                             return Err(format!(
                                 "'{:?}' does not take two register arguments",
