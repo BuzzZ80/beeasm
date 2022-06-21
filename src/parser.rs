@@ -135,18 +135,16 @@ impl Parser {
             return Ok(Some(instruction)); // If there's none, just return the op with no condition as an instruction
         }
 
-        let current_line = peek.2;
-
         self.next(); // Consume the '?'
 
         // Get the next word for the condition if it exists
         let peek = match self.peek() {
             Some(t) => t,
-            None => return Err(format!("No condition after '?' on line {}", current_line)),
+            None => return Err(format!("Expected condition after '?', found EOF")),
         };
 
         // Check that the peeked token is in fact a condition, and if so, set that to op's cond
-        match peek.0 {
+        match &peek.0 {
             TokenKind::Eq
             | TokenKind::Neq
             | TokenKind::Lt
@@ -159,7 +157,7 @@ impl Parser {
             | TokenKind::Nin
             | TokenKind::Ir
             | TokenKind::Nir => instruction.kind = ExprKind::Instruction(peek.0.to_owned()),
-            _ => return Err("No condition after '?'".to_owned()),
+            t => return Err(format!("Expected condition after '?', found {:?}", t)),
         };
 
         // Consume conditional token
