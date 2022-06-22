@@ -65,7 +65,7 @@ impl CodeGen {
     fn get_labels(&mut self) -> Result<(), String> {
         let mut cum_pos = 0;
         // Loop through all labels:
-        while let Some((label, pos)) = self.get_next_label()? {
+        while let Some((label, pos)) = self.get_next_label(cum_pos)? {
             // Make sure label doesn't already exist elsewhere to prevent confusion or user error
             if self.labels.get(&label).is_some() {
                 return Err(format!(r#"Duplicate label "{}" found"#, label));
@@ -91,7 +91,7 @@ impl CodeGen {
     }
 
     /// Calculates the distance from the base of the WordPacket to the first label, then consumes it.
-    fn get_next_label(&mut self) -> Result<Option<(String, usize)>, String> {
+    fn get_next_label(&mut self, addr: usize) -> Result<Option<(String, usize)>, String> {
         let mut relative_pos = 0; // Distance from base of packet
         let label; // Will store the name of the label
 
@@ -105,7 +105,7 @@ impl CodeGen {
 
             let len: usize = match kind {
                 ExprKind::Instruction(_) => self.instruction_len()?,
-                ExprKind::Directive(_) => self.directive_len()?,
+                ExprKind::Directive(_) => self.directive_len(addr + relative_pos)?,
                 // If it's a label, break out of the loop after setting variable 'label' to the label name
                 ExprKind::Label(l) => {
                     label = l.to_owned();
@@ -164,7 +164,7 @@ impl CodeGen {
     }
 
     /// Get the number of bytes that a valid Directive takes in memory
-    fn directive_len(&mut self) -> Result<usize, String> {
+    fn directive_len(&mut self, addr: usize) -> Result<usize, String> {
         let expr = match self.exprs.get(self.index) {
             Some(expr) if matches!(expr.kind, ExprKind::Directive(_)) => expr,
             _ => panic!("directive_len called on non-instruction value... oops"),
@@ -202,7 +202,7 @@ impl CodeGen {
             }
             TokenKind::Fill => {
                 if expr.exprs.len() != 1 && expr.exprs.len() != 2 {
-                    return Err("Wrong number of parameters given to fillto".to_owned());
+                    return Err("Wrong number of parameters given to fill".to_owned());
                 }
 
                 let len = self.expression(&expr.exprs[0])? as usize;
@@ -216,7 +216,7 @@ impl CodeGen {
 
                 let until_addr = self.expression(&expr.exprs[0])? as usize;
 
-                Ok(until_addr - self.out.len())
+                Ok(until_addr - addr)
             }
             TokenKind::Strz => {
                 let mut len = 0;
