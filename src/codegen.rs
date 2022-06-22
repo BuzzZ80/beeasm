@@ -119,6 +119,7 @@ impl CodeGen {
 
             if self.org_change {
                 relative_pos = 0;
+                self.org_change = false;
             }
 
             relative_pos += len;
