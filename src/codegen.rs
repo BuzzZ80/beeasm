@@ -81,7 +81,6 @@ impl CodeGen {
             cum_pos += pos;
 
             // Inserts label from get_next_label() at the labels position from the base plus the base
-            println!("labels.insert({}, {}", label, cum_pos + self.org);
             self.labels.insert(label, cum_pos + self.org);
         }
 
@@ -221,7 +220,6 @@ impl CodeGen {
 
                 let until_addr = self.expression(&expr.exprs[0])? as usize;
 
-                println!("{} - {}", until_addr, self.binary_pos);
                 Ok(until_addr - self.binary_pos)
             }
             TokenKind::Strz => {
