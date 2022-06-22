@@ -13,7 +13,7 @@ pub struct CodeGen {
     exprs: Vec<Expr>,
     index: usize,
     org: usize,
-    org_change: bool,
+    org_change: (bool, bool), // I know this is bad, cut me some slack ;w;
     binary_pos: usize,
 }
 
@@ -25,7 +25,7 @@ impl CodeGen {
             exprs,
             index: 0,
             org: 0,
-            org_change: false,
+            org_change: (false, false),
             binary_pos: 0,
         }
     }
@@ -73,8 +73,8 @@ impl CodeGen {
                 return Err(format!(r#"Duplicate label "{}" found"#, label));
             };
 
-            if self.org_change {
-                self.org_change = false;
+            if self.org_change.0 {
+                self.org_change = (false, true);
                 cum_pos = 0;
             }
 
@@ -95,6 +95,7 @@ impl CodeGen {
 
     /// Calculates the distance from the base of the WordPacket to the first label, then consumes it.
     fn get_next_label(&mut self) -> Result<Option<(String, usize)>, String> {
+        let mut org_did_change = false;
         let mut relative_pos = 0; // Distance from base of packet
         let label; // Will store the name of the label
 
@@ -117,9 +118,9 @@ impl CodeGen {
                 _ => panic!("Codegen error - get_next_label() encountered a non-instruction, directive, or label value... oops"),
             };
 
-            if self.org_change {
+            if self.org_change.1 {
                 relative_pos = 0;
-                self.org_change = false;
+                self.org_change = (false, false);
             }
 
             relative_pos += len;
@@ -187,7 +188,7 @@ impl CodeGen {
                 }
 
                 self.org = self.expression(&expr.exprs[0])? as usize;
-                self.org_change = true;
+                self.org_change.0 = true;
 
                 Ok(0)
             }
