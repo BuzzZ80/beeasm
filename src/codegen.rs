@@ -73,8 +73,8 @@ impl CodeGen {
                 return Err(format!(r#"Duplicate label "{}" found"#, label));
             };
 
-            if self.org_change.0 {
-                self.org_change = (false, true);
+            if self.org_change.1 {
+                self.org_change = (false, false);
                 cum_pos = 0;
             }
 
@@ -117,9 +117,9 @@ impl CodeGen {
                 _ => panic!("Codegen error - get_next_label() encountered a non-instruction, directive, or label value... oops"),
             };
 
-            if self.org_change.1 {
+            if self.org_change.0 {
                 relative_pos = 0;
-                self.org_change = (false, false);
+                self.org_change = (false, true);
             }
 
             relative_pos += len;
