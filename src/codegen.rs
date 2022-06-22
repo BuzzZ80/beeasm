@@ -95,7 +95,6 @@ impl CodeGen {
 
     /// Calculates the distance from the base of the WordPacket to the first label, then consumes it.
     fn get_next_label(&mut self) -> Result<Option<(String, usize)>, String> {
-        let mut org_did_change = false;
         let mut relative_pos = 0; // Distance from base of packet
         let label; // Will store the name of the label
 
