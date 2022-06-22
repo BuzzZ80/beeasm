@@ -386,6 +386,7 @@ impl CodeGen {
                     TokenKind::Popx => 0x2B,
                     TokenKind::Jmp => 0x30,
                     TokenKind::Jsr => 0x31,
+                    TokenKind::Int => 0x35,
                     _ => {
                         return Err(format!(
                             "'{:?}' does not take a single immediate argument",
