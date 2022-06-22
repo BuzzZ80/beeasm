@@ -9,7 +9,7 @@ const POS_CONDITION: usize = 9;
 
 pub struct CodeGen {
     pub out: Vec<u8>,
-    labels: HashMap<String, usize>,
+    pub labels: HashMap<String, usize>,
     exprs: Vec<Expr>,
     index: usize,
     org: usize,
@@ -216,6 +216,7 @@ impl CodeGen {
 
                 let until_addr = self.expression(&expr.exprs[0])? as usize;
 
+                println!("{} - {}", until_addr, addr);
                 Ok(until_addr - addr)
             }
             TokenKind::Strz => {
