@@ -14,6 +14,7 @@ pub struct CodeGen {
     index: usize,
     org: usize,
     org_change: bool,
+    binary_pos: usize,
 }
 
 impl CodeGen {
@@ -25,6 +26,7 @@ impl CodeGen {
             index: 0,
             org: 0,
             org_change: false,
+            binary_pos: 0,
         }
     }
 
@@ -65,7 +67,7 @@ impl CodeGen {
     fn get_labels(&mut self) -> Result<(), String> {
         let mut cum_pos = 0;
         // Loop through all labels:
-        while let Some((label, pos)) = self.get_next_label(cum_pos)? {
+        while let Some((label, pos)) = self.get_next_label()? {
             // Make sure label doesn't already exist elsewhere to prevent confusion or user error
             if self.labels.get(&label).is_some() {
                 return Err(format!(r#"Duplicate label "{}" found"#, label));
@@ -79,19 +81,21 @@ impl CodeGen {
             cum_pos += pos;
 
             // Inserts label from get_next_label() at the labels position from the base plus the base
+            println!("labels.insert({}, {}", label, cum_pos + self.org);
             self.labels.insert(label, cum_pos + self.org);
         }
 
         // Reset the codegen struct so that it can be used by assembly instructions
         self.index = 0;
         self.org = 0;
+        self.binary_pos = 0;
         self.out.clear();
 
         Ok(())
     }
 
     /// Calculates the distance from the base of the WordPacket to the first label, then consumes it.
-    fn get_next_label(&mut self, addr: usize) -> Result<Option<(String, usize)>, String> {
+    fn get_next_label(&mut self) -> Result<Option<(String, usize)>, String> {
         let mut relative_pos = 0; // Distance from base of packet
         let label; // Will store the name of the label
 
@@ -105,7 +109,7 @@ impl CodeGen {
 
             let len: usize = match kind {
                 ExprKind::Instruction(_) => self.instruction_len()?,
-                ExprKind::Directive(_) => self.directive_len(addr + relative_pos)?,
+                ExprKind::Directive(_) => self.directive_len()?,
                 // If it's a label, break out of the loop after setting variable 'label' to the label name
                 ExprKind::Label(l) => {
                     label = l.to_owned();
@@ -119,6 +123,7 @@ impl CodeGen {
             }
 
             relative_pos += len;
+            self.binary_pos += len;
 
             // Update last packet (in case there was an org) and move on to next Expr in the program
             self.index += 1;
@@ -164,7 +169,7 @@ impl CodeGen {
     }
 
     /// Get the number of bytes that a valid Directive takes in memory
-    fn directive_len(&mut self, addr: usize) -> Result<usize, String> {
+    fn directive_len(&mut self) -> Result<usize, String> {
         let expr = match self.exprs.get(self.index) {
             Some(expr) if matches!(expr.kind, ExprKind::Directive(_)) => expr,
             _ => panic!("directive_len called on non-instruction value... oops"),
@@ -216,8 +221,8 @@ impl CodeGen {
 
                 let until_addr = self.expression(&expr.exprs[0])? as usize;
 
-                println!("{} - {}", until_addr, addr);
-                Ok(until_addr - addr)
+                println!("{} - {}", until_addr, self.binary_pos);
+                Ok(until_addr - self.binary_pos)
             }
             TokenKind::Strz => {
                 let mut len = 0;
@@ -719,12 +724,12 @@ impl CodeGen {
                         ExprKind::Byte(b) => *b,
                         _ => {
                             return Err(format!(
-                                ".fillto only takes an expression and then a byte. Found Expr {:?}",
+                                ".fill only takes an expression and then a byte. Found Expr {:?}",
                                 self.exprs[self.index].kind
                             ))
                         }
                     },
-                    _ => return Err("Wrong number of parameters given to fillto".to_owned()),
+                    _ => return Err("Wrong number of parameters given to .fill".to_owned()),
                 };
 
                 for _ in 0..len {
@@ -753,7 +758,7 @@ impl CodeGen {
                             ))
                         }
                     },
-                    _ => return Err("Wrong number of parameters given to fillto".to_owned()),
+                    _ => return Err("Wrong number of parameters given to .fillto".to_owned()),
                 };
 
                 for _ in self.out.len()..until_addr {
