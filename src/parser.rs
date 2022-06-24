@@ -197,11 +197,9 @@ impl Parser {
             | TokenKind::Xor
             | TokenKind::Flg
             | TokenKind::Push
-            | TokenKind::Pshx
             | TokenKind::Pop
             | TokenKind::Adc
             | TokenKind::Sbc
-            | TokenKind::Popx
             | TokenKind::Clc
             | TokenKind::Scb
             | TokenKind::Ccb
@@ -216,6 +214,8 @@ impl Parser {
             | TokenKind::Brk
             | TokenKind::Exit
             | TokenKind::Rti
+            | TokenKind::Ldb
+            | TokenKind::Stb
             | TokenKind::Swap
             | TokenKind::Scr => Expr {
                 kind: ExprKind::Op(op_token.0.to_owned()),
