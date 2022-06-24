@@ -213,6 +213,7 @@ impl Parser {
             | TokenKind::Int
             | TokenKind::Cli
             | TokenKind::Sti
+            | TokenKind::Brk
             | TokenKind::Exit
             | TokenKind::Rti
             | TokenKind::Swap
