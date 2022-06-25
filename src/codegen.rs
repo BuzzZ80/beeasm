@@ -387,8 +387,6 @@ impl CodeGen {
                 'i' => match op_kind {
                     TokenKind::Ssp => 0x18,
                     TokenKind::Push => 0x23,
-                    TokenKind::Pshx => 0x25,
-                    TokenKind::Popx => 0x2B,
                     TokenKind::Jmp => 0x30,
                     TokenKind::Jsr => 0x31,
                     TokenKind::Int => 0x35,
@@ -417,10 +415,12 @@ impl CodeGen {
                         TokenKind::Xor => 0x21,
                         TokenKind::Adc => 0x28,
                         TokenKind::Sbc => 0x2A,
+                        TokenKind::Ldb => 0x2D,
                         TokenKind::Scmp => 0x34,
                         TokenKind::Swap => 0x39,
                         TokenKind::Ldr => 0x3A,
                         TokenKind::Str => 0x3B,
+                        TokenKind::Stb => 0x3D,
                         _ => {
                             return Err(format!(
                                 "'{:?}' does not take two register arguments",
@@ -433,6 +433,7 @@ impl CodeGen {
                         TokenKind::Str => 0x11,
                         TokenKind::Stx => 0x13,
                         TokenKind::Scmp => 0x33,
+                        TokenKind::Stb => 0x3C,
                         _ => {
                             return Err(format!(
                                 "'{:?}' does not take a register and then an immediate",
@@ -459,6 +460,7 @@ impl CodeGen {
                         TokenKind::Flg => 0x22,
                         TokenKind::Adc => 0x27,
                         TokenKind::Sbc => 0x29,
+                        TokenKind::Ldb => 0x2B,
                         _ => {
                             return Err(format!(
                                 "{:?} does not take an immediate and then a register",

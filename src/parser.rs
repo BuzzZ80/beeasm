@@ -197,11 +197,9 @@ impl Parser {
             | TokenKind::Xor
             | TokenKind::Flg
             | TokenKind::Push
-            | TokenKind::Pshx
             | TokenKind::Pop
             | TokenKind::Adc
             | TokenKind::Sbc
-            | TokenKind::Popx
             | TokenKind::Clc
             | TokenKind::Scb
             | TokenKind::Ccb
@@ -214,6 +212,8 @@ impl Parser {
             | TokenKind::Cli
             | TokenKind::Sti
             | TokenKind::Exit
+            | TokenKind::Ldb
+            | TokenKind::Stb
             | TokenKind::Rti
             | TokenKind::Swap
             | TokenKind::Scr => Expr {
